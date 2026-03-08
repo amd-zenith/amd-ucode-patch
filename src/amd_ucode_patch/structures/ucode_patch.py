@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from .ucode_patch_header import UcodePatchHeader
+from .verified_header import VerifiedHeader
 
 
 @dataclass
@@ -9,13 +10,14 @@ class UcodePatch:
     header: UcodePatchHeader
     signature: bytes
     public_key: bytes
+    verified_header: VerifiedHeader
 
 
     @staticmethod
     def from_bytes(buf: bytes) -> "UcodePatch":
-        header = UcodePatchHeader.from_bytes(buf)
         return UcodePatch(
-            header=header,
+            header=UcodePatchHeader.from_bytes(buf),
             signature=buf[32:288],
             public_key=buf[288:800],
+            verified_header=VerifiedHeader.from_bytes(buf[800::])
         )
