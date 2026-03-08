@@ -10,16 +10,19 @@ class UcodePatch:
     header: UcodePatchHeader
     signature: bytes
     public_key: bytes
-    verified_header: VerifiedHeader
+    verified_header: VerifiedHeader | None
     body: bytes
 
 
     @staticmethod
     def from_bytes(buf: bytes) -> "UcodePatch":
+        header = UcodePatchHeader.from_bytes(buf)
+        verified_header = None if header.cpu_family < 0x16 else VerifiedHeader.from_bytes(buf[800::])
+        body_start_pos = UcodePatchHeader.SIZE + 256 + 512 + (0 if verified_header is None else VerifiedHeader.SIZE)
         return UcodePatch(
-            header=UcodePatchHeader.from_bytes(buf),
-            signature=buf[32:288],
-            public_key=buf[288:800],
-            verified_header=VerifiedHeader.from_bytes(buf[800::]),
-            body=buf[800+VerifiedHeader.SIZE::]
+            header=header,
+            signature=buf[UcodePatchHeader.SIZE:UcodePatchHeader.SIZE+256],
+            public_key=buf[UcodePatchHeader.SIZE+256:UcodePatchHeader.SIZE+256+512],
+            verified_header=verified_header,
+            body=buf[body_start_pos::]
         )

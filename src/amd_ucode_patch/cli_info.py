@@ -25,24 +25,30 @@ def expand_paths(patterns):
             yield Path(match)
 
 
+def _row_fields(path, patch):
+    return (
+        str(path),
+        f"{patch.header.year:04d}-{patch.header.month:02d}-{patch.header.day:02d}",
+        f"{patch.header.update_revision:08x}",
+        f"{patch.header.loader_id:04x}",
+        f"{patch.header.processor_rev_id:04x}",
+        patch.header.cpuid_str,
+        f"0x{patch.header.cpu_family:02x}",
+        f"0x{patch.header.cpu_model:02x}",
+        f"0x{patch.header.cpu_stepping:02x}",
+        f"{patch.verified_header.autorun if patch.verified_header is not None else ''}",
+        f"{patch.verified_header.encrypted if patch.verified_header is not None else ''}",
+        f"{len(patch.body)}",
+    )
+
 def print_table(console: Console, paths, format):
     table = Table(*COLS, box=format)
     for path in paths:
-        patch = ucode_patch_parse(path)
-        table.add_row(
-            str(path),
-            f"{patch.header.year:04d}-{patch.header.month:02d}-{patch.header.day:02d}",
-            f"{patch.header.update_revision:08x}",
-            f"{patch.header.loader_id:04x}",
-            f"{patch.header.processor_rev_id:04x}",
-            patch.header.cpuid_str,
-            f"0x{patch.header.cpu_family:02x}",
-            f"0x{patch.header.cpu_model:02x}",
-            f"0x{patch.header.cpu_stepping:02x}",
-            f"{patch.verified_header.autorun}",
-            f"{patch.verified_header.encrypted}",
-            f"{len(patch.body)}",
-        )
+        try:
+            patch = ucode_patch_parse(path)
+            table.add_row(*_row_fields(path, patch))
+        except Exception as e:
+            console.log(f"Error parsing {path}: {e}")
     console.print(table)
 
 
@@ -50,20 +56,7 @@ def print_csv(console: Console, paths):
     console.print(",".join(COLS))
     for path in paths:
         patch = ucode_patch_parse(path)
-        console.print(",".join([
-            str(path),
-            f"{patch.header.year:04d}/{patch.header.month:02d}/{patch.header.day:02d}",
-            f"{patch.header.update_revision:08x}",
-            f"{patch.header.loader_id:04x}",
-            f"{patch.header.processor_rev_id:04x}",
-            patch.header.cpuid_str,
-            f"0x{patch.header.cpu_family:02x}",
-            f"0x{patch.header.cpu_model:02x}",
-            f"0x{patch.header.cpu_stepping:02x}",
-            f"{patch.verified_header.autorun}",
-            f"{patch.verified_header.encrypted}",
-            f"{len(patch.body)}",
-        ]))
+        console.print(",".join(_row_fields(path, patch)))
 
 
 def main():
