@@ -12,7 +12,7 @@ from rich.table import Table
 from .banner import BANNER
 from .parse import ucode_patch_parse
 
-COLS = ["File", "Date", "Upd. Rev", "Loader ID", "Proc. Rev", "CPUID", "Family", "Model", "Stepping", "Autorun", "Encrypted"]
+COLS = ["File", "Date", "Upd. Rev", "Loader ID", "Proc. Rev", "CPUID", "Family", "Model", "Stepping", "Autorun", "Encrypted", "Body size"]
 
 
 def expand_paths(patterns):
@@ -41,6 +41,7 @@ def print_table(console: Console, paths, format):
             f"0x{patch.header.cpu_stepping:02x}",
             f"{patch.verified_header.autorun}",
             f"{patch.verified_header.encrypted}",
+            f"{len(patch.body)}",
         )
     console.print(table)
 
@@ -61,6 +62,7 @@ def print_csv(console: Console, paths):
             f"0x{patch.header.cpu_stepping:02x}",
             f"{patch.verified_header.autorun}",
             f"{patch.verified_header.encrypted}",
+            f"{len(patch.body)}",
         ]))
 
 
