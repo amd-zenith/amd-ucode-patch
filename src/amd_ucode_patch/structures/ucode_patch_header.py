@@ -7,6 +7,10 @@ def _weird_hex_as_dec(x: int) -> int:
     return int(f"{x:x}", 10)
 
 
+def _dec_as_weird_hex(x: int) -> int:
+    return int(str(x), 16)
+
+
 @dataclass
 class UcodePatchHeader:
     '''
@@ -41,7 +45,18 @@ class UcodePatchHeader:
     month: int
     update_revision: int
     loader_id: int
+    unk0: int
+    unk1: int
+    unk2: int
+    unk3: int
+    unk4: int
     processor_rev_id: int
+    unk5: int
+    unk6: int
+    unk7: int
+    unk8: int
+    unk9: int
+    unk10: int
 
     @property
     def cpu_family(self) -> int:
@@ -73,5 +88,38 @@ class UcodePatchHeader:
             month=_weird_hex_as_dec(vals[2]),
             update_revision=vals[3],
             loader_id=vals[4],
-            processor_rev_id=vals[10]
+            unk0=vals[5],
+            unk1=vals[6],
+            unk2=vals[7],
+            unk3=vals[8],
+            unk4=vals[9],
+            processor_rev_id=vals[10],
+            unk5=vals[11],
+            unk6=vals[12],
+            unk7=vals[13],
+            unk8=vals[14],
+            unk9=vals[15],
+            unk10=vals[16],
+        )
+
+    def to_bytes(self) -> bytes:
+        return struct.pack(
+            UcodePatchHeader.FMT,
+            _dec_as_weird_hex(self.year),
+            _dec_as_weird_hex(self.day),
+            _dec_as_weird_hex(self.month),
+            self.update_revision,
+            self.loader_id,
+            self.unk0,
+            self.unk1,
+            self.unk2,
+            self.unk3,
+            self.unk4,
+            self.processor_rev_id,
+            self.unk5,
+            self.unk6,
+            self.unk7,
+            self.unk8,
+            self.unk9,
+            self.unk10,
         )
