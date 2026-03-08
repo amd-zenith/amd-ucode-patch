@@ -12,6 +12,8 @@ class VerifiedHeader:
 
     autorun: int
     encrypted: int
+    unk0: int
+    unk1: int
     update_revision: int
 
     @staticmethod
@@ -23,5 +25,17 @@ class VerifiedHeader:
         return VerifiedHeader(
             autorun=vals[0],
             encrypted=vals[1],
+            unk0=vals[2],
+            unk1=vals[3],
             update_revision=vals[4],
+        )
+
+    def to_bytes(self) -> bytes:
+        return struct.pack(
+            VerifiedHeader.FMT,
+            self.autorun,
+            self.encrypted,
+            self.unk0,
+            self.unk1,
+            self.update_revision,
         )
