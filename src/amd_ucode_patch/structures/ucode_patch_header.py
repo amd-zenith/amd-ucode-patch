@@ -39,7 +39,8 @@ class UcodePatchHeader:
     year: int
     day: int
     month: int
-    revision: int
+    update_revision: int
+    loader_id: int
     processor_rev_id: int
 
     @property
@@ -70,6 +71,7 @@ class UcodePatchHeader:
             year=_weird_hex_as_dec(vals[0]),
             day=_weird_hex_as_dec(vals[1]),
             month=_weird_hex_as_dec(vals[2]),
-            revision=vals[3],
+            update_revision=vals[3],
+            loader_id=vals[4],
             processor_rev_id=vals[10]
         )

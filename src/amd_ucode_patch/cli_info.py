@@ -12,7 +12,7 @@ from rich.table import Table
 from .banner import BANNER
 from .parse import ucode_patch_parse
 
-COLS = ["File", "Date", "Revision", "Proc. Rev", "CPUID", "Family", "Model", "Stepping"]
+COLS = ["File", "Date", "Upd. Rev", "Loader ID", "Proc. Rev", "CPUID", "Family", "Model", "Stepping"]
 
 
 def expand_paths(patterns):
@@ -32,7 +32,8 @@ def print_table(console: Console, paths, format):
         table.add_row(
             str(path),
             f"{patch.header.year:04d}-{patch.header.month:02d}-{patch.header.day:02d}",
-            f"{patch.header.revision:08x}",
+            f"{patch.header.update_revision:08x}",
+            f"{patch.header.loader_id:04x}",
             f"{patch.header.processor_rev_id:04x}",
             patch.header.cpuid_str,
             f"0x{patch.header.cpu_family:02x}",
@@ -49,7 +50,8 @@ def print_csv(console: Console, paths):
         console.print(",".join([
             str(path),
             f"{patch.header.year:04d}/{patch.header.month:02d}/{patch.header.day:02d}",
-            f"{patch.header.revision:08x}",
+            f"{patch.header.update_revision:08x}",
+            f"{patch.header.loader_id:04x}",
             f"{patch.header.processor_rev_id:04x}",
             patch.header.cpuid_str,
             f"0x{patch.header.cpu_family:02x}",
