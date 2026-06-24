@@ -19,7 +19,7 @@ class VerifiedHeader:
     @staticmethod
     def from_bytes(buf: bytes) -> "VerifiedHeader":
         if len(buf) < VerifiedHeader.SIZE:
-            raise ValueError("not enough bytes for AMD header")
+            raise ValueError("not enough bytes for AMD verified header")
         chunk = buf[0:VerifiedHeader.SIZE]
         vals = struct.unpack(VerifiedHeader.FMT, chunk)
         return VerifiedHeader(

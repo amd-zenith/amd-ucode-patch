@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 '''
-A command line tool to print information about an AMD uCode patch files.
+A command line tool to print information about AMD uCode patch files.
 '''
 
 import glob
