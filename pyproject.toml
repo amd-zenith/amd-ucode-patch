@@ -12,6 +12,8 @@ authors = [
 description = "A Python library for parsing and interpreting AMD microcode patch files"
 readme = "README.md"
 requires-python = ">=3.10"
+license = "GPL-2.0-or-later"
+license-files = ["LICENSE.md"]
 keywords = ["amd", "microcode", "ucode", "patch", "parser", "x86"]
 classifiers = [
     "Development Status :: 4 - Beta",
