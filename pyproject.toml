@@ -11,14 +11,30 @@ authors = [
 ]
 description = "A Python library for parsing and interpreting AMD microcode patch files"
 readme = "README.md"
-requires-python = ">=3.0"
+requires-python = ">=3.10"
+keywords = ["amd", "microcode", "ucode", "patch", "parser", "x86"]
 classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Hardware",
+    "Topic :: Utilities",
 ]
 dependencies = [
   "rich",
 ]
+
+[project.urls]
+Homepage = "https://github.com/amd-zenith/amd-ucode-patch"
+Repository = "https://github.com/amd-zenith/amd-ucode-patch"
+Issues = "https://github.com/amd-zenith/amd-ucode-patch/issues"
 
 [project.scripts]
 amd_ucode_patch_info = "amd_ucode_patch.cli_info:main"
