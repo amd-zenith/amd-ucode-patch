@@ -18,7 +18,7 @@ class UcodePatch:
     @staticmethod
     def from_bytes(buf: bytes) -> "UcodePatch":
         header = UcodePatchHeader.from_bytes(buf)
-        verified_header = None if header.cpu_family < 0x16 else VerifiedHeader.from_bytes(buf[800::])
+        verified_header = None if header.cpuid.family < 0x16 else VerifiedHeader.from_bytes(buf[800::])
         body_start_pos = UcodePatchHeader.SIZE + 256 + 512 + (0 if verified_header is None else VerifiedHeader.SIZE)
         return UcodePatch(
             header=header,

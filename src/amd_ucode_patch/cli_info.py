@@ -13,7 +13,7 @@ from rich.table import Table
 from .banner import BANNER
 from .parse import ucode_patch_parse
 
-COLS = ["File", "Date", "Upd. Rev", "Loader ID", "Proc. Rev", "CPUID", "Family", "Model", "Stepping", "Autorun", "Encrypted", "Body size"]
+COLS = ["File", "Date", "Upd. Rev", "Loader ID", "Proc. Rev", "CPUID", "Family", "Family Name", "Model", "Stepping", "Autorun", "Encrypted", "Body size"]
 
 
 def expand_paths(patterns):
@@ -32,11 +32,12 @@ def _row_fields(path, patch):
         f"{patch.header.year:04d}-{patch.header.month:02d}-{patch.header.day:02d}",
         f"{patch.header.update_revision:08x}",
         f"{patch.header.loader_id:04x}",
-        f"{patch.header.processor_rev_id:04x}",
-        patch.header.cpuid_str,
-        f"0x{patch.header.cpu_family:02x}",
-        f"0x{patch.header.cpu_model:02x}",
-        f"0x{patch.header.cpu_stepping:02x}",
+        f"{patch.header.cpuid.ucode_signature:04x}",
+        f"{patch.header.cpuid.cpuid_signature:08X}",
+        f"0x{patch.header.cpuid.family:02x}",
+        patch.header.cpuid.familyname,
+        f"0x{patch.header.cpuid.model:02x}",
+        f"0x{patch.header.cpuid.stepping:02x}",
         f"{patch.verified_header.autorun if patch.verified_header is not None else ''}",
         f"{patch.verified_header.encrypted if patch.verified_header is not None else ''}",
         f"{len(patch.body)}",

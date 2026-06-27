@@ -3,6 +3,7 @@
 
 import struct
 from dataclasses import dataclass
+from amd_cpuid import AmdCpuId
 
 def _weird_hex_as_dec(x: int) -> int:
     return int(f"{x:x}", 10)
@@ -51,31 +52,13 @@ class UcodePatchHeader:
     unk2: int
     unk3: int
     unk4: int
-    processor_rev_id: int
+    cpuid: AmdCpuId
     unk5: int
     unk6: int
     unk7: int
     unk8: int
     unk9: int
     unk10: int
-
-    @property
-    def cpu_family(self) -> int:
-        return 0xf + (self.processor_rev_id >> 12)
-
-    @property
-    def cpu_model(self) -> int:
-        return (self.processor_rev_id >> 4) & 0xf
-    
-    @property
-    def cpu_stepping(self) -> int:
-        return self.processor_rev_id & 0xf
-
-    @property
-    def cpuid_str(self) -> str:
-        hi = (self.processor_rev_id >> 8) & 0xFF
-        lo = self.processor_rev_id & 0xFF
-        return f"00{hi:02X}0F{lo:02X}"
 
     @staticmethod
     def from_bytes(buf: bytes) -> "UcodePatchHeader":
@@ -94,7 +77,7 @@ class UcodePatchHeader:
             unk2=vals[7],
             unk3=vals[8],
             unk4=vals[9],
-            processor_rev_id=vals[10],
+            cpuid=AmdCpuId.from_ucode_signature(vals[10]),
             unk5=vals[11],
             unk6=vals[12],
             unk7=vals[13],
@@ -116,7 +99,7 @@ class UcodePatchHeader:
             self.unk2,
             self.unk3,
             self.unk4,
-            self.processor_rev_id,
+            self.cpuid.ucode_signature,
             self.unk5,
             self.unk6,
             self.unk7,
