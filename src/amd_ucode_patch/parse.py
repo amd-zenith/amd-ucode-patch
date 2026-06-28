@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 from pathlib import Path
-from .structures.ucode_patch import UcodePatch
+from .structures.patch import Patch
 
-def ucode_patch_parse(file: Path) -> UcodePatch:
+def ucode_patch_parse(file: Path) -> Patch:
     with file.open("rb") as f:
-        return UcodePatch.from_bytes(f.read())
+        return Patch.from_bytes(f.read())
