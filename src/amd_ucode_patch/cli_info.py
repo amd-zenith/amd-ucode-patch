@@ -29,7 +29,7 @@ def expand_paths(patterns):
 def _row_fields(path, patch):
     return (
         str(path),
-        f"{patch.header.year:04d}-{patch.header.month:02d}-{patch.header.day:02d}",
+        str(patch.header.date),
         f"{patch.header.update_revision:08x}",
         f"{patch.header.loader_id:04x}",
         f"{patch.header.cpuid.ucode_signature:04x}",

@@ -4,13 +4,7 @@
 import struct
 from dataclasses import dataclass
 from amd_cpuid import AmdCpuId
-
-def _weird_hex_as_dec(x: int) -> int:
-    return int(f"{x:x}", 10)
-
-
-def _dec_as_weird_hex(x: int) -> int:
-    return int(str(x), 16)
+from amd_ucode_patch.structures.patch_date import PatchDate
 
 
 @dataclass
@@ -39,12 +33,11 @@ class UcodePatchHeader:
     data_code is in reality a date. We split that into u16, u8, u8.
     patch_id is referred to as revision in many other places.
     '''
-    FMT = "<HBB I HBB I II H BBBBBB"
-    SIZE = struct.calcsize(FMT)
+    # Fields after the leading PatchDate (data_code).
+    FMT = "<I HBB I II H BBBBBB"
+    SIZE = PatchDate.SIZE + struct.calcsize(FMT)
 
-    year: int
-    day: int
-    month: int
+    date: PatchDate
     update_revision: int
     loader_id: int
     unk0: int
@@ -64,34 +57,30 @@ class UcodePatchHeader:
     def from_bytes(buf: bytes) -> "UcodePatchHeader":
         if len(buf) < UcodePatchHeader.SIZE:
             raise ValueError("not enough bytes for AMD header")
-        chunk = buf[0:UcodePatchHeader.SIZE]
+        date = PatchDate.from_bytes(buf)
+        chunk = buf[PatchDate.SIZE:UcodePatchHeader.SIZE]
         vals = struct.unpack(UcodePatchHeader.FMT, chunk)
         return UcodePatchHeader(
-            year=_weird_hex_as_dec(vals[0]),
-            day=_weird_hex_as_dec(vals[1]),
-            month=_weird_hex_as_dec(vals[2]),
-            update_revision=vals[3],
-            loader_id=vals[4],
-            unk0=vals[5],
-            unk1=vals[6],
-            unk2=vals[7],
-            unk3=vals[8],
-            unk4=vals[9],
-            cpuid=AmdCpuId.from_ucode_signature(vals[10]),
-            unk5=vals[11],
-            unk6=vals[12],
-            unk7=vals[13],
-            unk8=vals[14],
-            unk9=vals[15],
-            unk10=vals[16],
+            date=date,
+            update_revision=vals[0],
+            loader_id=vals[1],
+            unk0=vals[2],
+            unk1=vals[3],
+            unk2=vals[4],
+            unk3=vals[5],
+            unk4=vals[6],
+            cpuid=AmdCpuId.from_ucode_signature(vals[7]),
+            unk5=vals[8],
+            unk6=vals[9],
+            unk7=vals[10],
+            unk8=vals[11],
+            unk9=vals[12],
+            unk10=vals[13],
         )
 
     def to_bytes(self) -> bytes:
-        return struct.pack(
+        return self.date.to_bytes() + struct.pack(
             UcodePatchHeader.FMT,
-            _dec_as_weird_hex(self.year),
-            _dec_as_weird_hex(self.day),
-            _dec_as_weird_hex(self.month),
             self.update_revision,
             self.loader_id,
             self.unk0,
