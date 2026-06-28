@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 from dataclasses import dataclass
+from Crypto.Cipher import AES
+from Crypto.Hash import CMAC
+from amd_ucode_patch.utils.rsa import pkcs1_v15_verify
 
 
 @dataclass
@@ -38,3 +41,16 @@ class Signature:
 
     def to_bytes(self) -> bytes:
         return self.signature + self.modulus + self.check
+
+    def verify(self, signed_region: bytes, cmac_key: bytes) -> bool:
+        """
+        Return ``True`` if this RSA signature, checked against the embedded
+        ``modulus``, recovers the AES-CMAC of ``signed_region`` (the body:
+        ``options`` + ``rev`` + match registers + opquads).
+
+        Uses the Zen 1-4 CMAC key by default; Zen 5 uses a different, unpublished
+        key, so Zen 5 patches will not verify unless the right ``cmac_key`` is
+        supplied.
+        """
+        digest = CMAC.new(cmac_key, msg=signed_region, ciphermod=AES).digest()
+        return pkcs1_v15_verify(self.signature, self.modulus, digest)
