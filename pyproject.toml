@@ -30,7 +30,7 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
-  "amd-cpuid==1.0.0",
+  "amd-cpuid==1.0.1",
   "rich==15.0.0",
 ]
 
