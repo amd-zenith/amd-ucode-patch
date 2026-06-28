@@ -12,8 +12,9 @@ from rich.console import Console
 from rich.table import Table
 from ..banner import BANNER
 from ..parse import ucode_patch_parse
+from ..structures.patch_level import PatchLevelV2
 
-COLS = ["File", "Date", "Upd. Rev", "Loader ID", "Proc. Rev", "CPUID", "Family", "Family Name", "Microarch", "Codename", "Model", "Stepping", "Autorun", "Encrypted", "Body size"]
+COLS = ["File", "Date", "Patch level", "PL Ver", "PL Rev", "Loader ID", "Proc. Rev", "CPUID", "Family", "Family Name", "Microarch", "Codename", "Model", "Stepping", "Autorun", "Encrypted", "Body size"]
 
 
 def expand_paths(patterns):
@@ -27,10 +28,15 @@ def expand_paths(patterns):
 
 
 def _row_fields(path, patch):
+    patch_level = patch.header.patch_level
+    # Advanced (v2 / Zen+) patch level fields are only meaningful when present.
+    patch_rev = f"{patch_level.rev:02x}" if isinstance(patch_level, PatchLevelV2) else ""
     return (
         str(path),
         str(patch.header.date),
-        str(patch.header.patch_level),
+        str(patch_level),
+        f"v{int(patch_level.version)}",
+        patch_rev,
         f"{patch.header.loader_id:04x}",
         f"{patch.header.cpuid.ucode_signature:04x}",
         f"{patch.header.cpuid.cpuid_signature:08X}",

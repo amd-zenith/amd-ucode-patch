@@ -59,10 +59,12 @@ class PatchHeader:
         if len(buf) < PatchHeader.SIZE:
             raise ValueError("not enough bytes for AMD header")
         date = PatchDate.from_bytes(buf)
-        patch_level = PatchLevel.from_bytes(buf[PatchDate.SIZE:])
         rest_start = PatchDate.SIZE + PatchLevel.SIZE
         chunk = buf[rest_start:PatchHeader.SIZE]
         vals = struct.unpack(PatchHeader.FMT, chunk)
+        cpuid = AmdCpuId.from_ucode_signature(vals[6])
+        # The patch level layout depends on the CPU family, so build cpuid first.
+        patch_level = PatchLevel.from_bytes(buf[PatchDate.SIZE:], family=cpuid.family)
         return PatchHeader(
             date=date,
             patch_level=patch_level,
@@ -72,7 +74,7 @@ class PatchHeader:
             unk2=vals[3],
             unk3=vals[4],
             unk4=vals[5],
-            cpuid=AmdCpuId.from_ucode_signature(vals[6]),
+            cpuid=cpuid,
             unk5=vals[7],
             unk6=vals[8],
             unk7=vals[9],

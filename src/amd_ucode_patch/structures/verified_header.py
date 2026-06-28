@@ -19,7 +19,7 @@ class VerifiedHeader:
     patch_level: PatchLevel
 
     @staticmethod
-    def from_bytes(buf: bytes) -> "VerifiedHeader":
+    def from_bytes(buf: bytes, family: int | None = None) -> "VerifiedHeader":
         if len(buf) < VerifiedHeader.SIZE:
             raise ValueError("not enough bytes for AMD verified header")
         head = struct.calcsize(VerifiedHeader.FMT)
@@ -29,7 +29,7 @@ class VerifiedHeader:
             encrypted=vals[1],
             unk0=vals[2],
             unk1=vals[3],
-            patch_level=PatchLevel.from_bytes(buf[head:VerifiedHeader.SIZE]),
+            patch_level=PatchLevel.from_bytes(buf[head:VerifiedHeader.SIZE], family=family),
         )
 
     def to_bytes(self) -> bytes:
