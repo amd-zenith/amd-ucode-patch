@@ -30,6 +30,11 @@ class PatchDate:
     MIN_YEAR = 1990
     MAX_YEAR = 2099
 
+    # Known AMD patches that ship an out-of-range date but are otherwise
+    # legitimate. Treated as plausible despite failing the calendar checks.
+    # 2011-13-09 -> family12_cpuid00300F10_rev03000027 (month 13).
+    KNOWN_EXCEPTIONS = frozenset({(2011, 13, 9)})
+
     year: int
     month: int
     day: int
@@ -73,6 +78,8 @@ class PatchDate:
 
     def is_plausible(self) -> bool:
         """Return ``True`` if the components fall within sane calendar ranges."""
+        if (self.year, self.month, self.day) in PatchDate.KNOWN_EXCEPTIONS:
+            return True
         return (
             1 <= self.month <= 12
             and 1 <= self.day <= 31
