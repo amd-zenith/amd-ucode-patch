@@ -5,6 +5,7 @@ import struct
 from dataclasses import dataclass
 from amd_cpuid import AmdCpuId
 from amd_ucode_patch.structures.patch_date import PatchDate
+from amd_ucode_patch.structures.patch_level import PatchLevel
 
 
 @dataclass
@@ -33,12 +34,12 @@ class PatchHeader:
     data_code is in reality a date. We split that into u16, u8, u8.
     patch_id is referred to as revision in many other places.
     '''
-    # Fields after the leading PatchDate (data_code).
-    FMT = "<I HBB I II H BBBBBB"
-    SIZE = PatchDate.SIZE + struct.calcsize(FMT)
+    # Fields after the leading PatchDate (data_code) and PatchLevel (patch_id).
+    FMT = "<HBB I II H BBBBBB"
+    SIZE = PatchDate.SIZE + PatchLevel.SIZE + struct.calcsize(FMT)
 
     date: PatchDate
-    update_revision: int
+    patch_level: PatchLevel
     loader_id: int
     unk0: int
     unk1: int
@@ -58,30 +59,31 @@ class PatchHeader:
         if len(buf) < PatchHeader.SIZE:
             raise ValueError("not enough bytes for AMD header")
         date = PatchDate.from_bytes(buf)
-        chunk = buf[PatchDate.SIZE:PatchHeader.SIZE]
+        patch_level = PatchLevel.from_bytes(buf[PatchDate.SIZE:])
+        rest_start = PatchDate.SIZE + PatchLevel.SIZE
+        chunk = buf[rest_start:PatchHeader.SIZE]
         vals = struct.unpack(PatchHeader.FMT, chunk)
         return PatchHeader(
             date=date,
-            update_revision=vals[0],
-            loader_id=vals[1],
-            unk0=vals[2],
-            unk1=vals[3],
-            unk2=vals[4],
-            unk3=vals[5],
-            unk4=vals[6],
-            cpuid=AmdCpuId.from_ucode_signature(vals[7]),
-            unk5=vals[8],
-            unk6=vals[9],
-            unk7=vals[10],
-            unk8=vals[11],
-            unk9=vals[12],
-            unk10=vals[13],
+            patch_level=patch_level,
+            loader_id=vals[0],
+            unk0=vals[1],
+            unk1=vals[2],
+            unk2=vals[3],
+            unk3=vals[4],
+            unk4=vals[5],
+            cpuid=AmdCpuId.from_ucode_signature(vals[6]),
+            unk5=vals[7],
+            unk6=vals[8],
+            unk7=vals[9],
+            unk8=vals[10],
+            unk9=vals[11],
+            unk10=vals[12],
         )
 
     def to_bytes(self) -> bytes:
-        return self.date.to_bytes() + struct.pack(
+        return self.date.to_bytes() + self.patch_level.to_bytes() + struct.pack(
             PatchHeader.FMT,
-            self.update_revision,
             self.loader_id,
             self.unk0,
             self.unk1,

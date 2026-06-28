@@ -30,7 +30,7 @@ def _row_fields(path, patch):
     return (
         str(path),
         str(patch.header.date),
-        f"{patch.header.update_revision:08x}",
+        str(patch.header.patch_level),
         f"{patch.header.loader_id:04x}",
         f"{patch.header.cpuid.ucode_signature:04x}",
         f"{patch.header.cpuid.cpuid_signature:08X}",
