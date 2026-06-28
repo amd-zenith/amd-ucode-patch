@@ -8,7 +8,7 @@ from amd_ucode_patch.structures.patch_date import PatchDate
 
 
 @dataclass
-class UcodePatchHeader:
+class PatchHeader:
     '''
     https://github.com/torvalds/linux/blob/3544d5ce36f403db6e5c994f526101c870ffe9fe/arch/x86/kernel/cpu/microcode/amd.c#L70
     
@@ -54,13 +54,13 @@ class UcodePatchHeader:
     unk10: int
 
     @staticmethod
-    def from_bytes(buf: bytes) -> "UcodePatchHeader":
-        if len(buf) < UcodePatchHeader.SIZE:
+    def from_bytes(buf: bytes) -> "PatchHeader":
+        if len(buf) < PatchHeader.SIZE:
             raise ValueError("not enough bytes for AMD header")
         date = PatchDate.from_bytes(buf)
-        chunk = buf[PatchDate.SIZE:UcodePatchHeader.SIZE]
-        vals = struct.unpack(UcodePatchHeader.FMT, chunk)
-        return UcodePatchHeader(
+        chunk = buf[PatchDate.SIZE:PatchHeader.SIZE]
+        vals = struct.unpack(PatchHeader.FMT, chunk)
+        return PatchHeader(
             date=date,
             update_revision=vals[0],
             loader_id=vals[1],
@@ -80,7 +80,7 @@ class UcodePatchHeader:
 
     def to_bytes(self) -> bytes:
         return self.date.to_bytes() + struct.pack(
-            UcodePatchHeader.FMT,
+            PatchHeader.FMT,
             self.update_revision,
             self.loader_id,
             self.unk0,
