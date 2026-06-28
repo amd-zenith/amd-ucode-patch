@@ -9,8 +9,6 @@ from .verified_header import VerifiedHeader
 @dataclass
 class UcodePatch:
     header: PatchHeader
-    signature: bytes
-    public_key: bytes
     verified_header: VerifiedHeader | None
     body: bytes
 
@@ -18,12 +16,16 @@ class UcodePatch:
     @staticmethod
     def from_bytes(buf: bytes) -> "UcodePatch":
         header = PatchHeader.from_bytes(buf)
-        verified_header = None if header.cpuid.family < 0x16 else VerifiedHeader.from_bytes(buf[800::], family=header.cpuid.family)
-        body_start_pos = PatchHeader.SIZE + 256 + 512 + (0 if verified_header is None else VerifiedHeader.SIZE)
+        # The verified header (options + rev) follows the signed header, and like
+        # the signature block it only exists on Zen and later.
+        if header.signature is not None:
+            verified_header = VerifiedHeader.from_bytes(buf[header.size:], family=header.cpuid.family)
+            body_start_pos = header.size + VerifiedHeader.SIZE
+        else:
+            verified_header = None
+            body_start_pos = header.size
         return UcodePatch(
             header=header,
-            signature=buf[PatchHeader.SIZE:PatchHeader.SIZE+256],
-            public_key=buf[PatchHeader.SIZE+256:PatchHeader.SIZE+256+512],
             verified_header=verified_header,
             body=buf[body_start_pos::]
         )
