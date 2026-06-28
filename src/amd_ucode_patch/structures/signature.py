@@ -4,7 +4,7 @@
 from dataclasses import dataclass
 from Crypto.Cipher import AES
 from Crypto.Hash import CMAC
-from amd_ucode_patch.utils.rsa import pkcs1_v15_verify
+from amd_ucode_patch.utils.rsa import digest_recover, pkcs1_v15_verify
 
 
 @dataclass
@@ -41,6 +41,18 @@ class Signature:
 
     def to_bytes(self) -> bytes:
         return self.signature + self.modulus + self.check
+
+    def recover_digest(self) -> bytes | None:
+        """
+        Recover the digest this signature commits to, using only the embedded
+        public ``modulus`` (no CMAC key required): compute
+        ``signature ^ 0x10001 mod modulus`` and strip the PKCS#1 v1.5 padding.
+
+        Returns the recovered payload — the 16-byte AES-CMAC AMD signed — or
+        ``None`` if the recovered block is not well-formed PKCS#1 v1.5 (e.g. a
+        corrupt signature or wrong modulus).
+        """
+        return digest_recover(self.signature, self.modulus)
 
     def verify(self, signed_region: bytes, cmac_key: bytes) -> bool:
         """

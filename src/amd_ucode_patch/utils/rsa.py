@@ -38,15 +38,28 @@ def pkcs1_v15_unpad(block: bytes) -> bytes | None:
     return block[i + 1:]
 
 
+def digest_recover(signature: bytes, modulus: bytes, exponent: int = 0x10001) -> bytes | None:
+    """
+    Recover the digest this signature commits to, using only the embedded
+    public ``modulus`` (no CMAC key required): compute
+    ``signature ^ 0x10001 mod modulus`` and strip the PKCS#1 v1.5 padding.
+
+    Returns the recovered payload — the 16-byte AES-CMAC AMD signed — or
+    ``None`` if the recovered block is not well-formed PKCS#1 v1.5 (e.g. a
+    corrupt signature or wrong modulus).
+    """
+    try:
+        block = rsa_recover(signature, modulus, exponent)
+    except ValueError:
+        return None
+    return pkcs1_v15_unpad(block)
+
+
 def pkcs1_v15_verify(signature: bytes, modulus: bytes, digest: bytes,
                      exponent: int = 0x10001) -> bool:
     """
     Verify a PKCS#1 v1.5 signature whose padded payload is the raw ``digest``
     (no DigestInfo ASN.1 wrapper, as AMD uses a bare 16-byte CMAC).
     """
-    try:
-        block = rsa_recover(signature, modulus, exponent)
-    except ValueError:
-        return False
-    payload = pkcs1_v15_unpad(block)
+    payload = digest_recover(signature, modulus, exponent)
     return payload is not None and payload == digest
