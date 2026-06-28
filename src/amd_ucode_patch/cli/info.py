@@ -14,7 +14,7 @@ from ..banner import BANNER
 from ..parse import ucode_patch_parse
 from ..structures.patch_level import PatchLevelV2
 
-COLS = ["File", "Date", "Patch level", "PL Ver", "PL Rev", "Loader ID", "Proc. Rev", "CPUID", "Family", "Family Name", "Microarch", "Codename", "Model", "Stepping", "Autorun", "Encrypted", "Body size"]
+COLS = ["File", "Date", "Patch level", "PL Ver", "PL Rev", "Loader ID", "Proc. Rev", "CPUID", "Family", "Family Name", "Model", "Stepping", "Microarch", "Codename", "Autorun", "Encrypted", "Body size"]
 
 
 def expand_paths(patterns):
@@ -42,10 +42,10 @@ def _row_fields(path, patch):
         f"{patch.header.cpuid.cpuid_signature:08X}",
         f"0x{patch.header.cpuid.family:02x}",
         patch.header.cpuid.familyname,
-        patch.header.cpuid.microarchitecture,
-        patch.header.cpuid.codename,
         f"0x{patch.header.cpuid.model:02x}",
         f"0x{patch.header.cpuid.stepping:02x}",
+        patch.header.cpuid.microarchitecture,
+        patch.header.cpuid.codename,
         f"{patch.verified_header.autorun if patch.verified_header is not None else ''}",
         f"{patch.verified_header.encrypted if patch.verified_header is not None else ''}",
         f"{len(patch.body)}",
