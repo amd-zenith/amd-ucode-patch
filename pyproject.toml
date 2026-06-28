@@ -40,7 +40,7 @@ Repository = "https://github.com/amd-zenith/amd-ucode-patch"
 Issues = "https://github.com/amd-zenith/amd-ucode-patch/issues"
 
 [project.scripts]
-amd_ucode_patch_info = "amd_ucode_patch.cli_info:main"
+amd_ucode_patch_info = "amd_ucode_patch.cli.info:main"
 
 [tool.hatch.version]
 source = "vcs"

@@ -10,8 +10,8 @@ from pathlib import Path
 from rich import box
 from rich.console import Console
 from rich.table import Table
-from .banner import BANNER
-from .parse import ucode_patch_parse
+from ..banner import BANNER
+from ..parse import ucode_patch_parse
 
 COLS = ["File", "Date", "Upd. Rev", "Loader ID", "Proc. Rev", "CPUID", "Family", "Family Name", "Microarch", "Codename", "Model", "Stepping", "Autorun", "Encrypted", "Body size"]
 
