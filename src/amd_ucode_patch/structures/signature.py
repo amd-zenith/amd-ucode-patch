@@ -4,7 +4,7 @@
 from dataclasses import dataclass
 from Crypto.Cipher import AES
 from Crypto.Hash import CMAC
-from amd_ucode_patch.utils.rsa import digest_recover, pkcs1_v15_verify
+from amd_ucode_patch.utils.rsa import recover_pkcs1_v15_payload, verify_pkcs1_v15_payload
 
 
 @dataclass
@@ -52,7 +52,7 @@ class Signature:
         ``None`` if the recovered block is not well-formed PKCS#1 v1.5 (e.g. a
         corrupt signature or wrong modulus).
         """
-        return digest_recover(self.signature, self.modulus)
+        return recover_pkcs1_v15_payload(self.signature, self.modulus)
 
     def verify(self, signed_region: bytes, cmac_key: bytes) -> bool:
         """
@@ -65,4 +65,4 @@ class Signature:
         supplied.
         """
         digest = CMAC.new(cmac_key, msg=signed_region, ciphermod=AES).digest()
-        return pkcs1_v15_verify(self.signature, self.modulus, digest)
+        return verify_pkcs1_v15_payload(self.signature, self.modulus, digest)

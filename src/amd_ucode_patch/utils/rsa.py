@@ -3,27 +3,21 @@
 
 """
 Minimal RSA signature verification helpers (textbook RSA + PKCS#1 v1.5 type 1).
-
-No private-key operations and no external dependencies: verification is just a
-modular exponentiation (``pow``) plus unpadding, which is all that is needed to
-check an AMD microcode patch signature against its embedded public modulus.
 """
 
 
-def rsa_recover(signature: bytes, modulus: bytes, exponent: int = 0x10001) -> bytes:
+def pkcs1_v15_pad_type1(payload: bytes, size: int) -> bytes:
     """
-    Return the RSA-recovered block ``signature ** exponent mod modulus`` as a
-    big-endian byte string the same width as ``modulus``.
+    Build a PKCS#1 v1.5 type-1 padded block:
+    ``00 01 FF..FF 00 || payload``.
     """
-    n = int.from_bytes(modulus, "big")
-    s = int.from_bytes(signature, "big")
-    if n == 0 or s >= n:
-        raise ValueError("signature is not a residue modulo the public modulus")
-    m = pow(s, exponent, n)
-    return m.to_bytes(len(modulus), "big")
+    if size < len(payload) + 11:
+        raise ValueError("RSA size too small for PKCS#1 v1.5 padding")
+    ff_len = size - len(payload) - 3
+    return b"\x00\x01" + (b"\xff" * ff_len) + b"\x00" + payload
 
 
-def pkcs1_v15_unpad(block: bytes) -> bytes | None:
+def pkcs1_v15_unpad_type1(block: bytes) -> bytes | None:
     """
     Strip PKCS#1 v1.5 block-type-1 padding (``00 01 FF..FF 00 || payload``) and
     return the payload, or ``None`` if the padding is malformed.
@@ -38,7 +32,20 @@ def pkcs1_v15_unpad(block: bytes) -> bytes | None:
     return block[i + 1:]
 
 
-def digest_recover(signature: bytes, modulus: bytes, exponent: int = 0x10001) -> bytes | None:
+def rsa_public_op(signature: bytes, modulus: bytes, exponent: int = 0x10001) -> bytes:
+    """
+    Return the RSA-recovered block ``signature ** exponent mod modulus`` as a
+    big-endian byte string the same width as ``modulus``.
+    """
+    n = int.from_bytes(modulus, "big")
+    s = int.from_bytes(signature, "big")
+    if n == 0 or s >= n:
+        raise ValueError("signature is not a residue modulo the public modulus")
+    m = pow(s, exponent, n)
+    return m.to_bytes(len(modulus), "big")
+
+
+def recover_pkcs1_v15_payload(signature: bytes, modulus: bytes, exponent: int = 0x10001) -> bytes | None:
     """
     Recover the digest this signature commits to, using only the embedded
     public ``modulus`` (no CMAC key required): compute
@@ -49,17 +56,32 @@ def digest_recover(signature: bytes, modulus: bytes, exponent: int = 0x10001) ->
     corrupt signature or wrong modulus).
     """
     try:
-        block = rsa_recover(signature, modulus, exponent)
+        block = rsa_public_op(signature, modulus, exponent)
     except ValueError:
         return None
-    return pkcs1_v15_unpad(block)
+    return pkcs1_v15_unpad_type1(block)
 
 
-def pkcs1_v15_verify(signature: bytes, modulus: bytes, digest: bytes,
-                     exponent: int = 0x10001) -> bool:
+def verify_pkcs1_v15_payload(signature: bytes, modulus: bytes, digest: bytes,
+                             exponent: int = 0x10001) -> bool:
     """
     Verify a PKCS#1 v1.5 signature whose padded payload is the raw ``digest``
     (no DigestInfo ASN.1 wrapper, as AMD uses a bare 16-byte CMAC).
     """
-    payload = digest_recover(signature, modulus, exponent)
+    payload = recover_pkcs1_v15_payload(signature, modulus, exponent)
     return payload is not None and payload == digest
+
+
+def sign_pkcs1_v15_payload(digest: bytes, modulus: bytes, private: bytes) -> bytes:
+    """
+    Create a PKCS#1 v1.5 signature over a precomputed ``digest`` using
+    textbook RSA private-key operation ``m^d mod n``.
+    """
+    n = int.from_bytes(modulus, "big")
+    d = int.from_bytes(private, "big")
+    m = int.from_bytes(pkcs1_v15_pad_type1(digest, len(modulus)), "big")
+    if n == 0:
+        raise ValueError("modulus cannot be zero")
+    if m >= n:
+        raise ValueError("padded message is not smaller than modulus")
+    return pow(m, d, n).to_bytes(len(modulus), "big")
