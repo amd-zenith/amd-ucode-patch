@@ -10,9 +10,9 @@ from pathlib import Path
 from rich import box
 from rich.console import Console
 from rich.table import Table
-from ..banner import BANNER
-from ..parse import ucode_patch_parse
-from ..structures.patch_level import PatchLevelV2
+from amd_ucode_patch.cli.banner import BANNER
+from amd_ucode_patch.parse import ucode_patch_parse
+from amd_ucode_patch.structures.patch_level import PatchLevelV2
 
 COLS = ["File", "Date", "Patch level", "PL Ver", "PL Rev", "Loader ID", "Proc. Rev", "CPUID", "Family", "Family Name", "Model", "Stepping", "Microarch", "Codename", "Signed", "Autorun", "Encrypted", "Body size"]
 
