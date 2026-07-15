@@ -6,6 +6,9 @@
 from Crypto.Cipher import AES
 from Crypto.Hash import CMAC
 
+#: AES block size in bytes; also the AES-CMAC block size.
+AES_BLOCK_SIZE = 16
+
 
 def cmac_digest(message: bytes, key: bytes) -> bytes:
     """Return AES-128-CMAC over ``message`` using ``key``."""
@@ -32,6 +35,6 @@ def cmac_subkeys(key: bytes) -> tuple[bytes, bytes]:
     ``L = AES_key(0^128)``, ``K1 = dbl(L)``, ``K2 = dbl(K1)``.
     """
     aes = AES.new(key, AES.MODE_ECB)
-    subkey1 = gf128_double(aes.encrypt(b"\x00" * 16))
+    subkey1 = gf128_double(aes.encrypt(b"\x00" * AES_BLOCK_SIZE))
     subkey2 = gf128_double(subkey1)
     return subkey1, subkey2
