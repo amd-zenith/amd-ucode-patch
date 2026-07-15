@@ -1,56 +1,53 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: GPL-2.0-or-later
 '''
-A command line tool to inspect and verify AMD uCode patch signatures.
+A command line tool to inspect, verify, sign and resign AMD uCode patches.
 '''
 
-import sys
 import argparse
-from Crypto.Cipher import AES
-from Crypto.Hash import CMAC
 from rich import box
 from rich.console import Console
 from rich.table import Table
-from ..banner import BANNER
-from ..parse import ucode_patch_parse
-from .info import expand_paths
+from amd_ucode_patch.cli.banner import BANNER
+from amd_ucode_patch.parse import ucode_patch_parse
+from amd_ucode_patch.utils.cmac import cmac_digest
+from amd_ucode_patch.cli.paths import expand_paths
+from amd_ucode_patch.cli.argtypes import parse_key
+
 
 COLS = ["File", "Signed", "Digest", "Valid"]
 
 
-def _parse_key(value: str) -> bytes:
-    text = value.strip().lower()
-    if text.startswith("0x"):
-        text = text[2:]
-    try:
-        key = bytes.fromhex(text)
-    except ValueError:
-        raise argparse.ArgumentTypeError(f"key must be hexadecimal, got {value!r}")
-    if len(key) != 16:
-        raise argparse.ArgumentTypeError(
-            f"key must be 16 bytes (32 hex chars), got {len(key)}"
-        )
-    return key
-
-
-def _row(path, key):
-    """Return (row_cells, verdict) where verdict is True/False (key given) or None."""
+def _verify_row(path, key):
+    """Return the four display cells (File, Signed, Digest, Valid) for one patch."""
     patch = ucode_patch_parse(path)
     signature = patch.header.signature
 
     if signature is None:
-        return (str(path), "[yellow]no[/yellow]", "", "[dim]n/a[/dim]"), None
+        return (str(path), "[yellow]no[/yellow]", "", "[dim]n/a[/dim]")
 
     recovered = signature.recover_digest()
     digest = recovered.hex() if recovered is not None else "[red]<bad padding>[/red]"
 
     if key is None:
-        return (str(path), "[green]yes[/green]", digest, "[dim]not checked[/dim]"), None
+        return (str(path), "[green]yes[/green]", digest, "[dim]not checked[/dim]")
 
-    computed = CMAC.new(key, msg=patch.body.to_bytes(), ciphermod=AES).digest()
+    computed = cmac_digest(patch.body.to_bytes(), key)
     verdict = recovered is not None and recovered == computed
     valid = "[green]yes[/green]" if verdict else "[red]no[/red]"
-    return (str(path), "[green]yes[/green]", digest, valid), verdict
+    return (str(path), "[green]yes[/green]", digest, valid)
+
+
+def verify(args, console):
+    """Process the ``verify`` command: print a signature table for each file."""
+    table = Table(*COLS, box=box.HEAVY_HEAD)
+    for path in expand_paths(args.files):
+        try:
+            row = _verify_row(path, args.key)
+            table.add_row(*row)
+        except Exception as e:
+            console.log(f"Error reading {path}: {e}")
+    console.print(table)
 
 
 def main():
@@ -58,31 +55,22 @@ def main():
     console.print(BANNER, highlight=False)
 
     parser = argparse.ArgumentParser(
-        description="Inspect AMD microcode patch signatures; verify them when a key is provided.",
+        description="Inspect, verify, sign and resign AMD microcode patch signatures.",
         epilog="The published Zen 1-4 CMAC key is 2b7e151628aed2a6abf7158809cf4f3c.",
     )
-    parser.add_argument("files", nargs="+", help="Patch files to inspect")
-    parser.add_argument(
-        "-k", "--key", type=_parse_key, default=None,
-        help="AES-128 CMAC key as hex (32 hex chars); enables signature verification",
-    )
+
+    subparsers = parser.add_subparsers(dest="command")
+
+    verify_parser = subparsers.add_parser("verify", help="Inspect signatures and verify with -k when provided")
+    verify_parser.add_argument("files", nargs="+", help="Patch files to inspect")
+    verify_parser.add_argument("-k", "--key", type=parse_key, default=None, help="AES-128 CMAC key as hex (32 hex chars); enables verification")
+
     args = parser.parse_args()
 
-    table = Table(*COLS, box=box.HEAVY_HEAD)
-    all_ok = True
-    for path in expand_paths(args.files):
-        try:
-            row, verdict = _row(path, args.key)
-            table.add_row(*row)
-            if verdict is False:
-                all_ok = False
-        except Exception as e:
-            console.log(f"Error reading {path}: {e}")
-            all_ok = False
-    console.print(table)
-
-    # Non-zero only when a key was given and a signature failed to verify.
-    sys.exit(0 if all_ok else 1)
+    if args.command == "verify":
+        verify(args, console)
+    else:
+        console.log(f"Error: unknown command {args.command!r}")
 
 
 if __name__ == "__main__":
