@@ -47,6 +47,24 @@ def rsa_public_op(signature: bytes, modulus: bytes, exponent: int = RSA_EXPONENT
     return m.to_bytes(len(modulus), "big")
 
 
+def montgomery_n_prime(modulus: bytes) -> bytes:
+    """
+    Compute the Montgomery constant ``n' = -n^(-1) mod R`` for ``modulus``,
+    where ``R = 2^(8 * len(modulus))``.
+
+    This is the precomputed helper a Montgomery-reduction (REDC) modular
+    exponentiation needs so it can replace division by the modulus with a shift.
+    The modulus must be odd (as any RSA modulus is) for the inverse to exist.
+    Returned big-endian, the same width as ``modulus``.
+    """
+    n = int.from_bytes(modulus, "big")
+    if n == 0 or n % 2 == 0:
+        raise ValueError("modulus must be non-zero and odd")
+    r = 1 << (8 * len(modulus))
+    inv = pow(n, -1, r)
+    return ((-inv) % r).to_bytes(len(modulus), "big")
+
+
 def recover_pkcs1_v15_payload(signature: bytes, modulus: bytes, exponent: int = RSA_EXPONENT_F4) -> bytes | None:
     """
     Recover the digest this signature commits to, using only the embedded
