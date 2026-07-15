@@ -5,6 +5,8 @@
 Minimal RSA signature verification helpers (textbook RSA + PKCS#1 v1.5 type 1).
 """
 
+RSA_EXPONENT_F4 = 0x10001
+
 
 def pkcs1_v15_pad_type1(payload: bytes, size: int) -> bytes:
     """
@@ -32,7 +34,7 @@ def pkcs1_v15_unpad_type1(block: bytes) -> bytes | None:
     return block[i + 1:]
 
 
-def rsa_public_op(signature: bytes, modulus: bytes, exponent: int = 0x10001) -> bytes:
+def rsa_public_op(signature: bytes, modulus: bytes, exponent: int = RSA_EXPONENT_F4) -> bytes:
     """
     Return the RSA-recovered block ``signature ** exponent mod modulus`` as a
     big-endian byte string the same width as ``modulus``.
@@ -45,7 +47,7 @@ def rsa_public_op(signature: bytes, modulus: bytes, exponent: int = 0x10001) -> 
     return m.to_bytes(len(modulus), "big")
 
 
-def recover_pkcs1_v15_payload(signature: bytes, modulus: bytes, exponent: int = 0x10001) -> bytes | None:
+def recover_pkcs1_v15_payload(signature: bytes, modulus: bytes, exponent: int = RSA_EXPONENT_F4) -> bytes | None:
     """
     Recover the digest this signature commits to, using only the embedded
     public ``modulus`` (no CMAC key required): compute
@@ -63,7 +65,7 @@ def recover_pkcs1_v15_payload(signature: bytes, modulus: bytes, exponent: int = 
 
 
 def verify_pkcs1_v15_payload(signature: bytes, modulus: bytes, digest: bytes,
-                             exponent: int = 0x10001) -> bool:
+                             exponent: int = RSA_EXPONENT_F4) -> bool:
     """
     Verify a PKCS#1 v1.5 signature whose padded payload is the raw ``digest``
     (no DigestInfo ASN.1 wrapper, as AMD uses a bare 16-byte CMAC).
