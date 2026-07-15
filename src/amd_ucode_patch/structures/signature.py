@@ -4,6 +4,7 @@
 from dataclasses import dataclass
 from Crypto.Cipher import AES
 from Crypto.Hash import CMAC
+from amd_ucode_patch.utils.cmac import cmac_digest
 from amd_ucode_patch.utils.rsa import recover_pkcs1_v15_payload, verify_pkcs1_v15_payload
 
 
@@ -64,5 +65,5 @@ class Signature:
         key, so Zen 5 patches will not verify unless the right ``cmac_key`` is
         supplied.
         """
-        digest = CMAC.new(cmac_key, msg=signed_region, ciphermod=AES).digest()
+        digest = cmac_digest(signed_region, cmac_key)
         return verify_pkcs1_v15_payload(self.signature, self.modulus, digest)
