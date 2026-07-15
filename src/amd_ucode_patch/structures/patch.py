@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+import hashlib
 from dataclasses import dataclass
 from .patch_header import PatchHeader
 from .body import Body
@@ -39,3 +40,11 @@ class Patch:
         if self.header.signature is None:
             return None
         return self.header.signature.verify(self.body.to_bytes(), cmac_key)
+
+    def sha256(self) -> bytes:
+        """SHA-256 digest of the whole patch (header + body)."""
+        return hashlib.sha256(self.to_bytes()).digest()
+
+    def sha256_hex(self) -> str:
+        """SHA-256 digest of the whole patch (header + body) as a hex string."""
+        return hashlib.sha256(self.to_bytes()).hexdigest()
