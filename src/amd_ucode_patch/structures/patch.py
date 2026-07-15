@@ -20,6 +20,11 @@ class Patch:
         body = Body.from_bytes(buf[header.size:], family=header.cpuid.family)
         return Patch(header=header, body=body)
 
+    def to_bytes(self) -> bytes:
+        """The whole patch encoding: the header (with signature block, if any)
+        followed by the signed body."""
+        return self.header.to_bytes() + self.body.to_bytes()
+
     def signature_verifies(self, cmac_key: bytes) -> bool | None:
         """
         Whether the patch signature verifies against its embedded public key,
