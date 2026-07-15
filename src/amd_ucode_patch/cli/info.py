@@ -4,27 +4,16 @@
 A command line tool to print information about AMD uCode patch files.
 '''
 
-import glob
 import argparse
-from pathlib import Path
 from rich import box
 from rich.console import Console
 from rich.table import Table
 from amd_ucode_patch.cli.banner import BANNER
+from amd_ucode_patch.cli.paths import expand_paths
 from amd_ucode_patch.parse import ucode_patch_parse
 from amd_ucode_patch.structures.patch_level import PatchLevelV2
 
 COLS = ["File", "Date", "Patch level", "PL Ver", "PL Rev", "Loader ID", "Proc. Rev", "CPUID", "Family", "Family Name", "Model", "Stepping", "Microarch", "Codename", "Signed", "Autorun", "Encrypted", "Body size"]
-
-
-def expand_paths(patterns):
-    for pattern in patterns:
-        matches = sorted(glob.glob(pattern, recursive=True))
-        if not matches:
-            yield Path(pattern)
-            continue
-        for match in matches:
-            yield Path(match)
 
 
 def _row_fields(path, patch):
