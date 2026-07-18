@@ -17,35 +17,23 @@ pip install amd-ucode-patch
 
 ## Command line tools
 
-Installing the package provides the following command line tools.
+Installing the package provides the following command line tools. Run any tool
+with `--help` for usage details.
 
-### `amd_ucode_patch_info`
-
-Inspect one or more AMD microcode patch files and print their header
-information as a table.
-
-```bash
-amd_ucode_patch_info <files...> [-f {text,md,csv}]
-```
-
-Arguments:
-
-- `files`: One or more patch files to inspect. Glob patterns (e.g. `*.bin` or `**/*.bin`) are expanded automatically.
-- `-f`, `--format`: Output format. One of:
-  - `text` (default): A table rendered for the terminal.
-  - `md`: A Markdown table.
-  - `csv`: Comma separated values.
-
-For every patch file the following fields are reported: file name, date, update revision, loader ID, processor revision, CPUID, family, model, stepping, autorun, encrypted and body size.
+| Tool                   | Description                                                                                   |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
+| `amd_ucode_patch_info` | Inspect patch files and print their decoded header fields as a table (text, Markdown or CSV). |
+| `amd_ucode_patch_sign` | Inspect, verify (`verify`) and re-sign (`resign`) patch signatures.                           |
 
 ## Library usage
 
 The package can also be used programmatically:
 
 ```python
+from pathlib import Path
 from amd_ucode_patch.parse import ucode_patch_parse
 
-patch = ucode_patch_parse("firmware.bin")
-print(patch.header.cpuid_str)
-print(patch.header.update_revision)
+patch = ucode_patch_parse(Path("firmware.bin"))
+print(patch.header.patch_level)
+print(f"{patch.header.cpuid.cpuid_signature:08X}")
 ```
