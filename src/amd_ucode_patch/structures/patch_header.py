@@ -22,12 +22,10 @@ class PatchHeader:
     The fixed 32-byte core is the Linux ``microcode_header_amd``. The fields the
     project interprets are:
 
-    - ``date``        -- build date (``data_code``; a BCD date, not a code)
-    - ``patch_level`` -- patch id / revision (``patch_id``; the value ``rdmsr
-                         0x8B`` reports for the loaded microcode)
-    - ``loader_id``   -- microcode loader id
-    - ``cpuid``       -- target processor, decoded from the ucode signature
-                         (``processor_rev_id``)
+    - ``date``        -- Build date in BCD format
+    - ``patch_level`` -- Patch ID / revision, the value ``rdmsr 0x8B`` reports
+    - ``loader_id``   -- loader / patch-format id the microcode loader checks for compatibility
+    - ``cpuid``       -- Target processor ID
 
     On Zen and later (family >= 0x17) a 768-byte cryptographic ``Signature`` block.
 
@@ -40,8 +38,26 @@ class PatchHeader:
     # optional Zen signature block follows it; use ``size`` for the total.
     SIZE = PatchDate.SIZE + PatchLevel.SIZE + struct.calcsize(FMT)
 
+    #: Build date (offset 0, u32), little-endian packed BCD ``0xMMDDYYYY`` (year in
+    #: the low 16 bits). Known elsewhere as ``data_code`` (Linux
+    #: ``microcode_header_amd``) and the "date code" (AMD patent US6438664). An
+    #: informational stamp of when the patch was built; the loader does not use it
+    #: to match or order patches. Modeled by :class:`PatchDate`.
     date: PatchDate
+    #: Patch level / update revision (offset 4, u32). Known elsewhere as
+    #: ``patch_id`` (Linux), ``revision`` (zentool) and "patch ID" (US6438664); it
+    #: is the value the CPU reports via ``rdmsr 0x8B`` (``MSR_AMD64_PATCH_LEVEL``)
+    #: for the loaded microcode. The loader uses it to decide whether an update is
+    #: newer than the running patch; on Zen the upper three bytes also encode the
+    #: target family/model/stepping. Modeled by :class:`PatchLevel`.
     patch_level: PatchLevel
+    #: Loader ID / patch-format ID (offset 8, u16). Known elsewhere as
+    #: ``mc_patch_data_id`` (Linux ``microcode_header_amd``), ``format`` (zentool
+    #: ``struct ucodehdr``) and the "microcode patch block (MPB) ID" (AMD patent
+    #: US6438664). Its purpose is a format-compatibility check: the on-chip
+    #: microcode loader compares this id against the id it supports and rejects
+    #: the update (GP fault, per US6438664) on a mismatch. In effect it identifies
+    #: the patch format/generation.
     loader_id: int
     unk0: int
     unk1: int
