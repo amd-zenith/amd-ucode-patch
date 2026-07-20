@@ -16,7 +16,7 @@ class Patch:
     @staticmethod
     def from_bytes(buf: bytes) -> "Patch":
         header = PatchHeader.from_bytes(buf)
-        # Everything after the header is the signed body: the verified header
+        # Everything after the header is the signed body: the body header
         # (options + rev, Zen only) plus the microcode itself.
         body = Body.from_bytes(buf[header.size:], family=header.cpuid.family)
         return Patch(header=header, body=body)

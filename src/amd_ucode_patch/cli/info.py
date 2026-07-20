@@ -36,8 +36,8 @@ def _row_fields(path, patch):
         patch.header.cpuid.microarchitecture,
         patch.header.cpuid.codename,
         "yes" if patch.header.signature is not None else "no",
-        f"{patch.body.verified_header.autorun if patch.body.verified_header is not None else ''}",
-        f"{patch.body.verified_header.encrypted if patch.body.verified_header is not None else ''}",
+        f"{patch.body.body_header.autorun if patch.body.body_header is not None else ''}",
+        f"{patch.body.body_header.encrypted if patch.body.body_header is not None else ''}",
         f"{len(patch.body.data)}",
     )
 
