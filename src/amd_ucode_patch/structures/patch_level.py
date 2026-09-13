@@ -1,280 +1,137 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: GPL-2.0-or-later
 
+"""
+The patch level
+The second 32-bit word of the patch header (offset 4).
+
+Known elsewhere as Linux ``patch_id``, zentool ``revision``, and "patch level" /
+"ucode level". It is the value the CPU reports via ``rdmsr 0x8B``
+(``MSR_AMD64_PATCH_LEVEL``) for the loaded microcode, and what the loader uses to
+decide whether an update is newer than the running patch.
+"""
+
+from __future__ import annotations
+
 import struct
-from abc import ABC, abstractmethod
+import warnings
 from dataclasses import dataclass
-from enum import IntEnum
 from typing import ClassVar
 
+from amd_cpuid import AmdCpuId
 
-#: Effective family at which the v2 (Zen) layout applies. The Linux kernel
-#: switches behaviour on ``x86_family(bsp_cpuid_1_eax) >= 0x17``.
-V2_MIN_FAMILY = 0x17
+#: Families AMD has actually shipped (base ``0xF`` plus extended family). Used
+#: to flag a decoded family that is not real silicon.
+_KNOWN_FAMILIES: frozenset[int] = frozenset(
+    {0x0F, 0x10, 0x11, 0x12, 0x14, 0x15, 0x16, 0x17, 0x19, 0x1A}
+)
 
+#: Families whose patch level packs the full CPUID beside the revision counter.
+_CPUID_FAMILIES: frozenset[int] = frozenset({0x16, 0x17, 0x19, 0x1A})
 
-class PatchLevelError(Exception):
-    """Base error for patch level operations."""
-
-
-class PatchLevelMismatchError(PatchLevelError):
-    """Raised when comparing two v2 patch levels that target different CPUs."""
-
-
-class PatchLevelVersion(IntEnum):
-    """Which structural layout a :class:`PatchLevel` uses (see module docs)."""
-
-    V1 = 1
-    V2 = 2
-
-    def __str__(self) -> str:
-        return {
-            PatchLevelVersion.V1: "v1 (pre-Zen)",
-            PatchLevelVersion.V2: "v2 (Zen+)",
-        }[self]
+#: Patch-level words whose family byte does not match the part they belong to,
+#: mapped to the real *extended* family verified from the corpus (filename,
+#: CPUID field and loader id all agree they are family 0x0F K8 patches, i.e.
+#: extended family 0x00). Correcting the extended family here fixes ``family``
+#: too, since it is derived from it. Both are one-off K8 oddities.
+_ANOMALIES: dict[int, int] = {
+    0x02000008: 0x00,   # top byte 0x02 would read as family 0x11
+    0xC0012102: 0x00,   # top byte 0xC0 would read as family 0xCF (not real)
+}
 
 
 @dataclass
-class PatchLevel(ABC):
-    """
-    Microcode patch level (a.k.a. patch ID / update revision), the second 32-bit
-    word of an AMD microcode patch header.
+class PatchLevel:
+    """The 4-byte patch level, as an editable little-endian u32 value."""
 
-    Names across sources, all the same ``u32`` at header offset 4:
-
-    - ``patch_id``           -- Linux ``struct microcode_header_amd``
-    - ``revision``           -- zentool ``struct ucodehdr``
-    - ``ucode_level`` / "Patch level" -- AMD ``amd_ucode_info.py`` / linux-firmware
-    - ``MSR_AMD64_PATCH_LEVEL`` (MSR ``0x8B``) -- what the CPU reports for the
-      currently loaded patch; the kernel verifies ``rdmsr 0x8B == hdr.patch_id``
-      after applying a patch.
-
-    The value is compared as a whole word by the loader, but it is not opaque.
-    It is a structured patch identifier whose layout depends on the CPU
-    generation. There are two documented versions ("v1" pre-Zen, "v2" Zen).
-
-    --------------------------------------------------------------------------
-    Version 1 -- pre-Zen (family <= 0x16)
-    --------------------------------------------------------------------------
-    The patch level is an *opaque, monotonically increasing counter*. The CPU
-    that a patch targets is NOT encoded here; matching is done via a separate
-    equivalence table (``equiv_cpu_entry``) keyed on ``CPUID(1).EAX``, and the
-    header's ``processor_rev_id`` links each patch to that table.
-
-    Apply rule (kernel): whole-word compare -- ``n->patch_id > p->patch_id``.
-
-    No source documents an internal sub-byte layout for v1. Empirically over the
-    collection the top byte still tracks the extended family
-    (``patch_id[31:24] == cpuid.familyext``), but the low 24 bits are just a
-    counter and bits ``[19:16]`` are NOT reserved (some v1 patches set them).
-    Do not decode model/stepping from a v1 patch level.
-
-    --------------------------------------------------------------------------
-    Version 2 -- Zen and later (family >= 0x17)
-    --------------------------------------------------------------------------
-    The patch level hardcodes the target family/model/stepping so the loader can
-    skip the equivalence table entirely. Bit layout (Linux ``union
-    zen_patch_rev``)::
-
-        bits [ 7: 0]  rev         patch sequence number (the only part that
-                                  increments between updates for a given CPU)
-        bits [11: 8]  stepping    CPU stepping
-        bits [15:12]  model       model, low nibble
-        bits [19:16]  (reserved)  always 0
-        bits [23:20]  ext_model   model, high nibble
-        bits [31:24]  ext_fam     extended family (effective family - 0xF)
-
-    Effective family = ``0xF + ext_fam``; effective model =
-    ``(ext_model << 4) | model``. These upper three bytes mirror
-    ``CPUID(1).EAX`` (base family nibble is forced to ``0xF`` and reconstructed).
-
-    Apply rule (kernel ``patch_newer``): the stepping must match, then compare
-    only the low byte -- ``zn.rev > zp.rev``.
-
-    --------------------------------------------------------------------------
-    References
-    --------------------------------------------------------------------------
-    - Linux ``arch/x86/kernel/cpu/microcode/amd.c`` -- ``struct
-      microcode_header_amd``, ``union zen_patch_rev``, ``patch_newer()``,
-      ``equiv_cpu_entry``, ``MSR_AMD64_PATCH_LEVEL``.
-    - AMD ``amd_ucode_info.py`` (AMDESE) and linux-firmware ``amd-ucode/README``.
-    - AMD CPUID Specification (PDF 25481) for the ``CPUID(1).EAX`` f/m/s layout.
-    """
-
-    FMT = "<I"
-    SIZE = struct.calcsize(FMT)
-
-    #: Layout this instance uses; set by each concrete subclass.
-    version: ClassVar[PatchLevelVersion]
+    #: Size of the patch-level word.
+    SIZE: ClassVar[int] = 4
+    #: Struct layout: little-endian u32.
+    _FMT: ClassVar[str] = "<I"
 
     value: int
 
-    @staticmethod
-    def from_bytes(buf: bytes, family: int | None = None) -> "PatchLevel":
-        """
-        Parse a patch level from the first 4 bytes of ``buf``.
-
-        ``family`` is the effective CPU family (from the header's cpuid). It
-        selects the layout: ``family >= 0x17`` -> v2, otherwise v1. When it is
-        unknown (``None``) the value defaults to the v1 (opaque counter) layout.
-        """
-        if len(buf) < PatchLevel.SIZE:
-            raise ValueError("not enough bytes for AMD patch level")
-        (value,) = struct.unpack(PatchLevel.FMT, buf[0:PatchLevel.SIZE])
-        return PatchLevel.from_value(value, family)
-
-    @staticmethod
-    def from_value(value: int, family: int | None = None) -> "PatchLevel":
-        """Build the variant appropriate for ``family`` (see :meth:`from_bytes`)."""
-        if family is not None and family >= V2_MIN_FAMILY:
-            return PatchLevelV2(value)
-        return PatchLevelV1(value)
+    @classmethod
+    def from_bytes(cls, data: bytes) -> "PatchLevel":
+        """Parse a patch level from the first :data:`SIZE` bytes of ``data``."""
+        if len(data) < cls.SIZE:
+            raise ValueError(
+                f"not enough bytes for AMD patch level: got {len(data)}, need {cls.SIZE}"
+            )
+        (value,) = struct.unpack_from(cls._FMT, data, 0)
+        return cls(value=value)
 
     def to_bytes(self) -> bytes:
-        return struct.pack(PatchLevel.FMT, self.value)
+        """Serialize the patch level back to its exact byte encoding."""
+        return struct.pack(self._FMT, self.value)
 
-    @abstractmethod
-    def is_valid(self, cpuid=None) -> bool:
+    @property
+    def is_anomalous(self) -> bool:
         """
-        Whether the structured fields are self-consistent (and, if ``cpuid`` is
-        given, consistent with it). See the concrete variants for the rules.
+        Whether this is one of the known-malformed patch levels whose top byte
+        does not name its real family (see :data:`_ANOMALIES`), and whose
+        extended family is therefore corrected on read.
         """
+        return self.value in _ANOMALIES
 
-    @abstractmethod
-    def _cmp_same(self, other: "PatchLevel") -> int:
-        """Compare against a same-version instance; return -1, 0 or 1."""
+    @property
+    def extended_family(self) -> int:
+        """
+        The extended family: the top byte (bits 31-24). This is the one field
+        the patch level carries in every version -- the rest of the word is a
+        version-dependent counter (pre-Zen) or a packed CPUID (Zen).
 
-    def _compare(self, other: object):
-        if not isinstance(other, PatchLevel):
-            return NotImplemented
-        if type(self) is not type(other):
-            raise PatchLevelError(
-                f"cannot compare {self.version} with {other.version} patch levels"
+        Two known K8 patches carry a top byte that does not match their part;
+        for those this returns the value verified from the corpus and warns.
+        Correcting it here also fixes :attr:`family`, which derives from it.
+        """
+        corrected = _ANOMALIES.get(self.value)
+        if corrected is not None:
+            raw = (self.value >> 24) & 0xFF
+            warnings.warn(
+                f"Patch level {self.value:#010x}: top byte {raw:#04x} is "
+                f"malformed; using the extended family {corrected:#04x} "
+                f"verified for this patch",
+                stacklevel=2,
             )
-        return self._cmp_same(other)
+            return corrected
+        return (self.value >> 24) & 0xFF
 
-    def __lt__(self, other: object):
-        r = self._compare(other)
-        return r < 0 if r is not NotImplemented else NotImplemented
+    @property
+    def family(self) -> int:
+        """
+        The CPU family: base family ``0xF`` plus :attr:`extended_family`. So
+        ``0x08`` in the top byte is family ``0x17`` (Zen 1).
 
-    def __le__(self, other: object):
-        r = self._compare(other)
-        return r <= 0 if r is not NotImplemented else NotImplemented
+        Inherits the correction and warning from :attr:`extended_family`. A
+        family that is not real AMD silicon warns too, but is returned as
+        decoded since there is nothing to correct it to.
+        """
+        family = 0xF + self.extended_family
+        if family not in _KNOWN_FAMILIES:
+            warnings.warn(
+                f"Patch level {self.value:#010x}: decoded family "
+                f"{family:#04x} is not a known AMD family",
+                stacklevel=2,
+            )
+        return family
 
-    def __gt__(self, other: object):
-        r = self._compare(other)
-        return r > 0 if r is not NotImplemented else NotImplemented
-
-    def __ge__(self, other: object):
-        r = self._compare(other)
-        return r >= 0 if r is not NotImplemented else NotImplemented
+    @property
+    def cpuid(self) -> AmdCpuId | None:
+        """
+        The CPUID this patch targets, recovered from the model and stepping the
+        patch level packs beside the family. Only on Jaguar (0x16) and Zen (0x17+).
+        """
+        if self.family not in _CPUID_FAMILIES:
+            return None
+        byte2 = (self.value >> 16) & 0xFF
+        byte1 = (self.value >> 8) & 0xFF
+        model_ext = byte2 & 0xF if self.family == 0x16 else byte2 >> 4
+        signature = (self.extended_family << 12) | (model_ext << 8) | byte1
+        return AmdCpuId.from_ucode_signature(signature)
 
     def __int__(self) -> int:
         return self.value
 
     def __str__(self) -> str:
         return f"{self.value:08x}"
-
-
-@dataclass
-class PatchLevelV1(PatchLevel):
-    """
-    Pre-Zen (family <= 0x16) patch level
-    An opaque, monotonically increasing counter.
-    """
-
-    version: ClassVar[PatchLevelVersion] = PatchLevelVersion.V1
-
-    @property
-    def rev(self) -> int:
-        """The monotonic patch counter."""
-        return self.value
-
-    def is_valid(self, cpuid=None) -> bool:
-        # v1 has no documented internal structure to validate. The top byte
-        # only advisorily tracks the extended family and a few genuine early
-        # patches violate even that, so validity is not gated on it.
-        return True
-
-    def _cmp_same(self, other: "PatchLevel") -> int:
-        return (self.value > other.value) - (self.value < other.value)
-
-
-@dataclass
-class PatchLevelV2(PatchLevel):
-    """
-    Zen and later (family >= 0x17) patch level.
-    The whole word decodes (Linux ``union zen_patch_rev``); the upper three bytes
-    identify the target CPU and only :attr:`rev` (low byte) increments between
-    updates.
-
-    Comparison requires the same target CPU: comparing two v2 patch levels whose
-    upper three bytes differ raises :class:`PatchLevelMismatchError`; otherwise
-    the low :attr:`rev` byte is compared.
-    """
-
-    version: ClassVar[PatchLevelVersion] = PatchLevelVersion.V2
-
-    @property
-    def rev(self) -> int:
-        """Patch sequence number (bits 7:0); the only part that increments."""
-        return self.value & 0xFF
-
-    @property
-    def stepping(self) -> int:
-        """CPU stepping (bits 11:8)."""
-        return (self.value >> 8) & 0xF
-
-    @property
-    def modelbase(self) -> int:
-        """Model low nibble (bits 15:12)."""
-        return (self.value >> 12) & 0xF
-
-    @property
-    def reserved(self) -> int:
-        """Reserved field (bits 19:16); expected to be 0."""
-        return (self.value >> 16) & 0xF
-
-    @property
-    def modelext(self) -> int:
-        """Model high nibble (bits 23:20)."""
-        return (self.value >> 20) & 0xF
-
-    @property
-    def familyext(self) -> int:
-        """Extended family (bits 31:24); ``family == 0xF + familyext``."""
-        return (self.value >> 24) & 0xFF
-
-    @property
-    def family(self) -> int:
-        """Effective family (``0xF + familyext``)."""
-        return 0xF + self.familyext
-
-    @property
-    def model(self) -> int:
-        """Effective model (``(modelext << 4) | modelbase``)."""
-        return (self.modelext << 4) | self.modelbase
-
-    def matches(self, cpuid) -> bool:
-        """Whether the embedded f/m/s match an ``AmdCpuId`` (upper 3 bytes)."""
-        expected = (
-            (cpuid.familyext << 16)
-            | (cpuid.modelext << 12)
-            | (cpuid.modelbase << 4)
-            | cpuid.stepping
-        )
-        return (self.value >> 8) == expected
-
-    def is_valid(self, cpuid=None) -> bool:
-        if self.reserved != 0:
-            return False
-        if self.familyext < (V2_MIN_FAMILY - 0xF):
-            return False
-        if cpuid is not None and not self.matches(cpuid):
-            return False
-        return True
-
-    def _cmp_same(self, other: "PatchLevel") -> int:
-        if (self.value >> 8) != (other.value >> 8):
-            raise PatchLevelMismatchError(f"patch levels target different CPUs: {self} vs {other}")
-        return (self.rev > other.rev) - (self.rev < other.rev)
