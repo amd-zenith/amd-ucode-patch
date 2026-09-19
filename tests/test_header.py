@@ -91,13 +91,17 @@ def test_edit_nested_patch_level_persists():
 
 
 def test_edit_persists_through_patch():
-    patch = Patch.from_bytes(_core(bytes.fromhex("07201406")) + b"body")
+    # The edit moves the patch to family 0x10, whose body opens with eight
+    # match registers, so the body has to be long enough to hold them on the
+    # way back in.
+    body = bytes(range(32))
+    patch = Patch.from_bytes(_core(bytes.fromhex("07201406")) + body)
     patch.header.date.day = 28
     patch.header.patch_level.value = 0x0100008F
     rebuilt = Patch.from_bytes(patch.to_bytes())
     assert rebuilt.header.date.day == 28
     assert rebuilt.header.patch_level.value == 0x0100008F
-    assert rebuilt.body.to_bytes() == b"body"
+    assert rebuilt.body.to_bytes() == body
 
 
 # -- corpus-backed --

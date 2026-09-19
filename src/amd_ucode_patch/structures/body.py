@@ -35,16 +35,15 @@ class Body:
         Parse the body from ``data``, which is the body and nothing else, using
         the CPU ``family`` to pick the layout.
 
-        :class:`BodyHeader` decides whether ``family`` carries a body header; if
-        it does, it is split off the front. The remainder is handed to the body
-        data registry, which picks the opaque or plaintext class from the
-        header's ``encrypted`` flag. A body with no header is plaintext.
+        :class:`BodyHeader` decides whether ``family`` carries a body header.
+        The remainder is handed to the body data registry, which picks the
+        correct representation.
         """
         data = bytes(data)
         body_header = BodyHeader.from_bytes(data, family)
         remainder = data[BodyHeader.SIZE:] if body_header is not None else data
         encrypted = body_header is not None and bool(body_header.encrypted)
-        body_data = body_data_from_bytes(encrypted, remainder)
+        body_data = body_data_from_bytes(family, encrypted, remainder)
         return cls(
             body_header=body_header,
             body_data=body_data,

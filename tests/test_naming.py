@@ -28,10 +28,15 @@ _NAME = re.compile(
 
 
 def _synthetic_patch() -> bytes:
-    """A minimal patch in a modelled, unsigned format (no body header)."""
+    """
+    A minimal patch in a modelled, unsigned format (no body header).
+
+    The zero patch level makes it family 0x0f, whose body opens with eight
+    match registers, so it carries a body long enough to hold them.
+    """
     core = bytearray(Header.CORE_SIZE)
     struct.pack_into("<H", core, 8, 0x8000)
-    return bytes(core)
+    return bytes(core) + bytes(32)
 
 
 def _parts(name: str) -> re.Match:

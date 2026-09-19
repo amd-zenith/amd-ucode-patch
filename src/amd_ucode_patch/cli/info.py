@@ -22,10 +22,11 @@ from amd_ucode_patch.structures.header_data import HeaderData
 from amd_ucode_patch.structures.patch import Patch
 
 #: Columns follow the order of the fields in the patch: the prologue, then the
-#: header data in offset order, then the signature block and the body header,
-#: with derived values shown next to the field they come from.
+#: header data in offset order, then the signature block, the body header and
+#: the body data, with derived values shown next to the field they come from.
 COLS = ["File", "Date", "Patch level", "Loader ID", "Triads", "Init",
-        "Checksum", "CPUID", "Signed", "Encrypted", "Body PL", "Size"]
+        "Checksum", "CPUID", "Signed", "Encrypted", "Body PL", "Match regs",
+        "Size"]
 
 #: Shown wherever a field is not defined by the patch's format.
 _NA = "-"
@@ -51,6 +52,18 @@ def _checksum_matches(data: HeaderData, raw: bytes) -> bool | None:
         return None
 
 
+def _match_registers(registers: list[int] | None) -> str:
+    """
+    How many match registers the body opens with.
+
+    ``None`` means this format's body is not modelled that far, which is not the
+    same as a body that carries no match registers. A body too short to hold the
+    ones its family declares never reaches here: the parser refuses it, and the
+    file is reported as a parse error instead of getting a row.
+    """
+    return _NA if registers is None else str(len(registers))
+
+
 def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str]]:
     """
     One table row for ``path``, filling what the patch's format supports, plus a
@@ -74,6 +87,9 @@ def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str]]:
     # ``encrypted`` and the mirrored patch level live only in the body header.
     encrypted = body_header.encrypted if body_header is not None else None
     body_pl = body_header.patch_level if body_header is not None else None
+    # The match registers live in the body data, and only a plaintext body that
+    # its family gives a count for has them; an encrypted one has no such field.
+    match_registers = getattr(patch.body.body_data, "match_registers", None)
 
     cells = (
         str(path),
@@ -88,6 +104,7 @@ def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str]]:
         "yes" if header.signature is not None else "no",
         ("yes" if encrypted else "no") if encrypted is not None else _NA,
         str(body_pl) if body_pl is not None else _NA,
+        _match_registers(match_registers),
         str(len(raw)),
     )
 
@@ -130,7 +147,9 @@ def _rows(paths):
             raw = path.read_bytes()
             cells, colours = _row_fields(path, raw)
         except Exception as exc:                                   # noqa: BLE001
-            console.log(f"Error parsing {path}: {exc}")
+            # A malformed file gets no row -- the parser refused it -- so this
+            # line is the only place it shows up. Red, so it is not missed.
+            console.log(f"[red]Error parsing {path}: {exc}[/red]")
             continue
         unmodelled += cells[COLS.index("Triads")] == _NA
         yield cells, colours

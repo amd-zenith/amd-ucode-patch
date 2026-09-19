@@ -17,6 +17,14 @@ def body_data_class(encrypted: bool) -> type[BodyData]:
     return EncryptedBodyData if encrypted else PlaintextBodyData
 
 
-def body_data_from_bytes(encrypted: bool, data: bytes) -> BodyData:
-    """Parse the body data from its raw bytes, opaque when ``encrypted``."""
-    return body_data_class(encrypted)(bytes(data))
+def body_data_from_bytes(family: int, encrypted: bool, data: bytes) -> BodyData:
+    """
+    Parse the body data from its raw bytes, opaque when ``encrypted``.
+
+    The ``encrypted`` flag alone picks the class. ``family`` is passed through
+    to the plaintext model, which is what knows the layout a family opens its
+    body with; it plays no part in the choice made here.
+    """
+    if encrypted:
+        return EncryptedBodyData(bytes(data))
+    return PlaintextBodyData.from_bytes(data, family)
