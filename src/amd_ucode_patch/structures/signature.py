@@ -1,69 +1,27 @@
 #!/usr/bin/env python
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-from dataclasses import dataclass
-from Crypto.Cipher import AES
-from Crypto.Hash import CMAC
-from amd_ucode_patch.utils.cmac import cmac_digest
-from amd_ucode_patch.utils.rsa import recover_pkcs1_v15_payload, verify_pkcs1_v15_payload
+"""
+The common interface of the signature block.
+"""
+
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from typing import ClassVar
 
 
-@dataclass
-class Signature:
-    """
-    Cryptographic signature block of a Zen (family >= 0x17) AMD microcode patch.
+class Signature(ABC):
+    """A signature-slot block, in whatever layout its family uses."""
 
-    It sits immediately after the 32-byte header core and is absent on pre-Zen
-    patches. Layout (offsets are from the start of the patch)::
+    #: Size of the block in bytes. Set by each concrete class.
+    SIZE: ClassVar[int]
 
-        offset  32  signature[256]  RSA-2048 signature (PKCS#1 v1.5, e=0x10001)
-        offset 288  modulus[256]    RSA-2048 public key, embedded in the patch
-        offset 544  check[256]      Montgomery helper derived from the modulus
-    """
+    @classmethod
+    @abstractmethod
+    def from_bytes(cls, data: bytes) -> "Signature":
+        """Parse the block from the first :data:`SIZE` bytes of ``data``."""
 
-    SIG_SIZE = 256
-    MODULUS_SIZE = 256
-    CHECK_SIZE = 256
-    SIZE = SIG_SIZE + MODULUS_SIZE + CHECK_SIZE
-
-    signature: bytes
-    modulus: bytes
-    check: bytes
-
-    @staticmethod
-    def from_bytes(buf: bytes) -> "Signature":
-        if len(buf) < Signature.SIZE:
-            raise ValueError("not enough bytes for AMD signature block")
-        return Signature(
-            signature=buf[0:Signature.SIG_SIZE],
-            modulus=buf[Signature.SIG_SIZE:Signature.SIG_SIZE + Signature.MODULUS_SIZE],
-            check=buf[Signature.SIG_SIZE + Signature.MODULUS_SIZE:Signature.SIZE],
-        )
-
+    @abstractmethod
     def to_bytes(self) -> bytes:
-        return self.signature + self.modulus + self.check
-
-    def recover_digest(self) -> bytes | None:
-        """
-        Recover the digest this signature commits to, using only the embedded
-        public ``modulus`` (no CMAC key required): compute
-        ``signature ^ 0x10001 mod modulus`` and strip the PKCS#1 v1.5 padding.
-
-        Returns the recovered payload — the 16-byte AES-CMAC AMD signed — or
-        ``None`` if the recovered block is not well-formed PKCS#1 v1.5 (e.g. a
-        corrupt signature or wrong modulus).
-        """
-        return recover_pkcs1_v15_payload(self.signature, self.modulus)
-
-    def verify(self, signed_region: bytes, cmac_key: bytes) -> bool:
-        """
-        Return ``True`` if this RSA signature, checked against the embedded
-        ``modulus``, recovers the AES-CMAC of ``signed_region`` (the body:
-        ``options`` + ``rev`` + match registers + opquads).
-
-        Uses the Zen 1-4 CMAC key by default; Zen 5 uses a different, unpublished
-        key, so Zen 5 patches will not verify unless the right ``cmac_key`` is
-        supplied.
-        """
-        digest = cmac_digest(signed_region, cmac_key)
-        return verify_pkcs1_v15_payload(self.signature, self.modulus, digest)
+        """Serialize the block back to its exact byte encoding."""

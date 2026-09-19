@@ -49,3 +49,7 @@ source = "vcs"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/amd_ucode_patch"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
