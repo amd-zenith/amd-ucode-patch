@@ -23,6 +23,7 @@ from amd_ucode_patch.structures.body_data_registry import (
     body_data_from_bytes,
 )
 from amd_ucode_patch.structures.body_header import BodyHeader
+from amd_ucode_patch.structures.match_registers import MatchRegisters
 from amd_ucode_patch.structures.patch import Patch
 
 #: A family whose body is opaque, and one whose body begins with a body header.
@@ -178,16 +179,19 @@ def _match_body(registers: list[int]) -> bytes:
 def test_match_registers_are_split_off():
     raw = _match_body(list(range(8)))
     body = Body.from_bytes(raw, _MATCH_FAMILY)
-    assert body.body_data.match_registers == list(range(8))
+    registers = body.body_data.match_registers
+    assert isinstance(registers, MatchRegisters)
+    assert registers.values == list(range(8))
+    assert registers.count == 8
     assert body.body_data.unknown0 == b"microcode"
     assert body.to_bytes() == raw
 
 
 def test_match_register_edit_persists():
     body = Body.from_bytes(_match_body([0] * 8), _MATCH_FAMILY)
-    body.body_data.match_registers[0] = 0xDEADBEEF
+    body.body_data.match_registers.values[0] = 0xDEADBEEF
     reparsed = Body.from_bytes(body.to_bytes(), _MATCH_FAMILY)
-    assert reparsed.body_data.match_registers[0] == 0xDEADBEEF
+    assert reparsed.body_data.match_registers.values[0] == 0xDEADBEEF
 
 
 def test_family_without_a_count_keeps_the_body_verbatim():
@@ -230,7 +234,7 @@ def test_a_body_that_exactly_fits_the_registers_is_decoded():
     """The boundary: nothing past the registers is not the same as too short."""
     raw = struct.pack("<8I", *range(8))
     body = Body.from_bytes(raw, _MATCH_FAMILY)
-    assert body.body_data.match_registers == list(range(8))
+    assert body.body_data.match_registers.values == list(range(8))
     assert body.body_data.unknown0 == b""
     assert body.to_bytes() == raw
 
@@ -240,18 +244,11 @@ def test_only_a_declared_count_can_be_unmet():
     The two cases a short body can land in: a family that declares a count
     refuses it, one that declares none keeps it verbatim.
     """
-    assert PlaintextBodyData.match_register_count(_MATCH_FAMILY) > 0
-    assert PlaintextBodyData.match_register_count(_OPAQUE_FAMILY) == 0
+    assert MatchRegisters.count_for_family(_MATCH_FAMILY) > 0
+    assert MatchRegisters.count_for_family(_OPAQUE_FAMILY) == 0
     with pytest.raises(ValueError):
         Body.from_bytes(b"short", _MATCH_FAMILY)
     assert Body.from_bytes(b"short", _OPAQUE_FAMILY).body_data.match_registers is None
-
-
-def test_match_register_count_is_only_claimed_where_proven():
-    """The count is the plaintext model's own knowledge, not the registry's."""
-    count = PlaintextBodyData.match_register_count
-    assert [count(f) for f in (0x0F, 0x10, 0x11)] == [8, 8, 8]
-    assert [count(f) for f in (0x12, 0x14, 0x15, 0x16, 0x17, 0x19, 0x1A)] == [0] * 7
 
 
 def test_registry_does_not_decide_the_layout():
@@ -263,7 +260,7 @@ def test_registry_does_not_decide_the_layout():
     assert body_data_class(False) is PlaintextBodyData
     assert body_data_class(True) is EncryptedBodyData
     raw = _match_body(list(range(8)))
-    assert body_data_from_bytes(_MATCH_FAMILY, False, raw).match_registers == list(range(8))
+    assert body_data_from_bytes(_MATCH_FAMILY, False, raw).match_registers.values == list(range(8))
     assert body_data_from_bytes(_OPAQUE_FAMILY, False, raw).match_registers is None
 
 
@@ -278,8 +275,11 @@ def test_match_registers_are_addresses_or_sentinels(patch_file: Path):
     if patch.header.patch_level.family not in _MATCH_FAMILIES:
         pytest.skip("family claims no match-register count")
     registers = patch.body.body_data.match_registers
-    assert len(registers) == 8
-    assert all(r == 0xFFFFFFFF or r < 0x10000 for r in registers)
+    assert registers.count == 8
+    assert all(r == registers.unused_value or r < 0x10000 for r in registers.values)
+    # The array is what the body opens with, so its size is where unknown0 starts.
+    assert registers.size == 32
+    assert patch.body.body_data.to_bytes()[registers.size:] == patch.body.body_data.unknown0
 
 
 def test_only_the_proven_families_decode_match_registers(patch_file: Path):

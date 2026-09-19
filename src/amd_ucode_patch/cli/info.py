@@ -19,6 +19,7 @@ from rich.table import Table
 from amd_ucode_patch.cli.banner import BANNER
 from amd_ucode_patch.cli.paths import expand_paths
 from amd_ucode_patch.structures.header_data import HeaderData
+from amd_ucode_patch.structures.match_registers import MatchRegisters
 from amd_ucode_patch.structures.patch import Patch
 
 #: Columns follow the order of the fields in the patch: the prologue, then the
@@ -52,16 +53,18 @@ def _checksum_matches(data: HeaderData, raw: bytes) -> bool | None:
         return None
 
 
-def _match_registers(registers: list[int] | None) -> str:
+def _match_registers(registers: MatchRegisters | None) -> str:
     """
-    How many match registers the body opens with.
+    How many match registers the body opens with, and how many are in use.
 
     ``None`` means this format's body is not modelled that far, which is not the
     same as a body that carries no match registers. A body too short to hold the
     ones its family declares never reaches here: the parser refuses it, and the
     file is reported as a parse error instead of getting a row.
     """
-    return _NA if registers is None else str(len(registers))
+    if registers is None:
+        return _NA
+    return f"{len(registers.used)}/{registers.count}"
 
 
 def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str]]:

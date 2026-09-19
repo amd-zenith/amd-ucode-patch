@@ -7,11 +7,10 @@ Non-encrypted body data.
 
 from __future__ import annotations
 
-import struct
 from dataclasses import dataclass
-from typing import ClassVar
 
 from amd_ucode_patch.structures.body_data import BodyData
+from amd_ucode_patch.structures.match_registers import MatchRegisters
 
 
 @dataclass
@@ -23,27 +22,13 @@ class PlaintextBodyData(BodyData):
 
     is_encrypted = False
 
-    #: The number of match registers each family opens its body with.
-    _MATCH_REGISTERS_COUNT: ClassVar[dict[int, int]] = {
-        0x0F: 8,
-        0x10: 8,
-        0x11: 8,
-    }
-
-    #: The match registers the body opens with, as raw u32s. ``None`` on a
-    #: format whose body does not begin with them.
-    #: Offset 0, ``4 * len(match_registers)`` bytes.
-    #: Other names:
-    #:   - Linux kernel: ``match_reg[8]``
-    match_registers: list[int] | None
+    #: The match registers the body opens with. ``None`` on a format whose body
+    #: does not begin with them.
+    #: Offset 0, :attr:`MatchRegisters.size` bytes.
+    match_registers: MatchRegisters | None
     #: The contents past the match registers, kept verbatim and not yet
     #: modelled.
     unknown0: bytes
-
-    @classmethod
-    def match_register_count(cls, family: int) -> int:
-        """How many match registers ``family`` opens its body with, 0 if unknown."""
-        return cls._MATCH_REGISTERS_COUNT.get(family, 0)
 
     @classmethod
     def from_bytes(cls, data: bytes, family: int) -> "PlaintextBodyData":
@@ -55,24 +40,11 @@ class PlaintextBodyData(BodyData):
         cannot fill.
         """
         data = bytes(data)
-        match_count = cls.match_register_count(family)
-        if match_count <= 0:
-            return cls(match_registers=None, unknown0=data)
-        data_offset = match_count * 4
-        if len(data) < data_offset:
-            raise ValueError(
-                f"not enough bytes for the family {family:#04x} match "
-                f"registers: got {len(data)}, need {data_offset}"
-            )
-        return cls(
-            match_registers=list(struct.unpack_from(f"<{match_count}I", data, 0)),
-            unknown0=data[data_offset:],
-        )
+        registers = MatchRegisters.for_family(data, family)
+        data_offset = 0 if registers is None else registers.size
+        return cls(match_registers=registers, unknown0=data[data_offset:])
 
     def to_bytes(self) -> bytes:
         """Serialize the body data back to its exact byte encoding."""
-        return (
-            (struct.pack(f"<{len(self.match_registers)}I", *self.match_registers)
-             if self.match_registers else b"")
-            + self.unknown0
-        )
+        head = b"" if self.match_registers is None else self.match_registers.to_bytes()
+        return head + self.unknown0
