@@ -22,15 +22,20 @@ class MatchRegisters:
     REGISTER_SIZE: ClassVar[int] = 4
     #: Struct code for one register at :data:`REGISTER_SIZE`.
     _CODE: ClassVar[str] = "I"
+    #: Mask of the ROM address within a register: its low 16 bits.
+    _ADDRESS_MASK: ClassVar[int] = 0xFFFF
+    #: The address a slot that is not in use reads.
+    UNUSED_ADDRESS: ClassVar[int] = 0xFFFF
     #: How many registers each family opens its body with.
     _COUNT_BY_FAMILY: ClassVar[dict[int, int]] = {
         0x0F: 8,
         0x10: 8,
         0x11: 8,
+        0x12: 8,
     }
 
-    #: The registers, in order, as raw u32s. A slot not in use reads
-    #: :attr:`unused_value`.
+    #: The registers, in order, as raw u32s. The ROM address is the low half;
+    #: a slot not in use reads :data:`UNUSED_ADDRESS` there.
     #: Other names:
     #:   - Linux kernel: ``match_reg[8]``
     values: list[int]
@@ -46,14 +51,19 @@ class MatchRegisters:
         return self.count * self.REGISTER_SIZE
 
     @property
-    def unused_value(self) -> int:
-        """The value a slot not in use reads: all-ones at this width."""
-        return (1 << (8 * self.REGISTER_SIZE)) - 1
+    def addresses(self) -> list[int]:
+        """
+        The ROM address each slot names, or :data:`UNUSED_ADDRESS` where the
+        slot is free. One entry per register, so it lines up with
+        :attr:`values`.
+        """
+        return [value & self._ADDRESS_MASK for value in self.values]
 
     @property
     def used(self) -> list[int]:
-        """The registers in use: the ROM addresses this patch actually takes over."""
-        return [value for value in self.values if value != self.unused_value]
+        """The addresses in use: the ROM addresses this patch actually takes over."""
+        return [address for address in self.addresses
+                if address != self.UNUSED_ADDRESS]
 
     @classmethod
     def count_for_family(cls, family: int) -> int:

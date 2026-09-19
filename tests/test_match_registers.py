@@ -18,7 +18,7 @@ from amd_ucode_patch.structures.match_registers import MatchRegisters
 #: How many registers families 0x0f-0x11 carry.
 _COUNT = 8
 #: The families whose body opens with match registers, and one of them.
-_MATCH_FAMILIES = (0x0F, 0x10, 0x11)
+_MATCH_FAMILIES = (0x0F, 0x10, 0x11, 0x12)
 _MATCH_FAMILY = 0x10
 #: A family whose body does not.
 _OTHER_FAMILY = 0x14
@@ -70,14 +70,37 @@ def test_edit_persists():
 
 # -- the unused slots --
 
-def test_unused_value_is_all_ones():
-    assert MatchRegisters(values=[]).unused_value == 0xFFFFFFFF
+def test_unused_address_is_all_ones_in_the_low_half():
+    assert MatchRegisters.UNUSED_ADDRESS == 0xFFFF
+
+
+def test_address_is_the_low_half_of_the_register():
+    """The high half is not part of the address: Llano puts something else there."""
+    registers = MatchRegisters(values=[0x1AC8FFFF, 0x7CA703FC, 0x00000644])
+    assert registers.addresses == [0xFFFF, 0x03FC, 0x0644]
+
+
+def test_addresses_lines_up_with_values():
+    registers = MatchRegisters.from_bytes(_array([1, 2, 3, 4, 5, 6, 7, 8]), _COUNT)
+    assert len(registers.addresses) == registers.count
 
 
 def test_used_drops_the_unused_slots():
     raw = _array([0x644, 0xFFFFFFFF, 0x6A4, 0xFFFFFFFF, 0x972, 0x970, 0xB9B, 0xFFFFFFFF])
     registers = MatchRegisters.from_bytes(raw, _COUNT)
     assert registers.used == [0x644, 0x6A4, 0x972, 0x970, 0xB9B]
+    assert registers.count == _COUNT
+
+
+def test_used_ignores_the_high_half():
+    """
+    A free Llano slot reads 0xffff in its address with a non-zero high half, so
+    matching the whole word against 0xffffffff would miss it.
+    """
+    raw = _array([0x0BD8106D, 0x29380A51, 0x0A72FFFF, 0x7CA703FC,
+                  0x1CB8FFFF, 0x6B59FFFF, 0xA9F9FFFF, 0x1AC8FFFF])
+    registers = MatchRegisters.from_bytes(raw, _COUNT)
+    assert registers.used == [0x106D, 0x0A51, 0x03FC]
     assert registers.count == _COUNT
 
 
@@ -94,7 +117,7 @@ def test_count_is_claimed_for_the_proven_families(family):
     assert MatchRegisters.count_for_family(family) == _COUNT
 
 
-@pytest.mark.parametrize("family", [0x12, 0x14, 0x15, 0x16, 0x17, 0x19, 0x1A])
+@pytest.mark.parametrize("family", [0x14, 0x15, 0x16, 0x17, 0x19, 0x1A])
 def test_no_count_is_claimed_for_any_other_family(family):
     assert MatchRegisters.count_for_family(family) == 0
 

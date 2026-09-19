@@ -29,7 +29,7 @@ from amd_ucode_patch.structures.patch import Patch
 #: A family whose body is opaque, and one whose body begins with a body header.
 _OPAQUE_FAMILY, _BODY_HEADER_FAMILY = 0x14, 0x17
 #: The families whose body opens with match registers, and one of them.
-_MATCH_FAMILIES = frozenset({0x0F, 0x10, 0x11})
+_MATCH_FAMILIES = frozenset({0x0F, 0x10, 0x11, 0x12})
 _MATCH_FAMILY = 0x10
 
 
@@ -276,7 +276,8 @@ def test_match_registers_are_addresses_or_sentinels(patch_file: Path):
         pytest.skip("family claims no match-register count")
     registers = patch.body.body_data.match_registers
     assert registers.count == 8
-    assert all(r == registers.unused_value or r < 0x10000 for r in registers.values)
+    assert all(a == MatchRegisters.UNUSED_ADDRESS or a < 0x2000
+               for a in registers.addresses)
     # The array is what the body opens with, so its size is where unknown0 starts.
     assert registers.size == 32
     assert patch.body.body_data.to_bytes()[registers.size:] == patch.body.body_data.unknown0
