@@ -87,8 +87,10 @@ def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str]]:
     checksum = _field(data, "op_triad_checksum")
     cpuid = _field(data, "cpuid")
     pl_family = header.patch_level.family
-    # ``encrypted`` and the mirrored patch level live only in the body header.
-    encrypted = body_header.encrypted if body_header is not None else None
+    # The body knows whether it is encrypted whatever its format: the flag when
+    # there is a body header to carry one, and plaintext when there is not. The
+    # mirrored patch level does live only in the body header.
+    encrypted = patch.body.is_encrypted
     body_pl = body_header.patch_level if body_header is not None else None
     # The match registers live in the body data, and only a plaintext body that
     # its family gives a count for has them; an encrypted one has no such field.
@@ -105,7 +107,7 @@ def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str]]:
         f"{cpuid.ucode_signature:04x} ({cpuid.description})"
         if cpuid is not None else _NA,
         "yes" if header.signature is not None else "no",
-        ("yes" if encrypted else "no") if encrypted is not None else _NA,
+        "yes" if encrypted else "no",
         str(body_pl) if body_pl is not None else _NA,
         _match_registers(match_registers),
         str(len(raw)),
