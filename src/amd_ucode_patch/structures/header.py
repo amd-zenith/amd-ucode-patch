@@ -35,7 +35,7 @@ class Header:
     _DATE_OFF: ClassVar[int] = 0
     #: Offset of the patch level (a :class:`PatchLevel`).
     _PATCH_LEVEL_OFF: ClassVar[int] = 4
-    #: Offset of the loader id (a :class:`LoaderId`), the format discriminator.
+    #: Offset of the loader id (a :class:`LoaderId`).
     _LOADER_ID_OFF: ClassVar[int] = 8
     #: Offset of the grouped :class:`HeaderData` (the rest of the core).
     _DATA_OFF: ClassVar[int] = 10
@@ -44,8 +44,8 @@ class Header:
     date: Date
     #: Patch level / update revision (offset 4), a :class:`PatchLevel`.
     patch_level: PatchLevel
-    #: Loader / patch-format id (offset 8), a :class:`LoaderId`. The format
-    #: discriminator the on-chip loader checks; drives how the patch is parsed.
+    #: Loader id (offset 8), a :class:`LoaderId`. Kept as a stored value; the
+    #: parser dispatches on the CPU family (from the patch level), not on this.
     loader_id: LoaderId
     #: The rest of the fixed core (offsets 10-32), grouped as :class:`HeaderData`.
     #: Which concrete model this is depends on :attr:`loader_id`.

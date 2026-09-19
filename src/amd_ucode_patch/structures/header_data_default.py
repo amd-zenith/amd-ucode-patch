@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 """
-Header data for a loader id with no format-specific model.
+Header data for a family with no format-specific model of its own.
 Models only what every known format agrees on, and keeps the rest verbatim.
 """
 
