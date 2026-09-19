@@ -10,16 +10,19 @@ from __future__ import annotations
 from amd_ucode_patch.structures.header_data import HeaderData
 from amd_ucode_patch.structures.header_data_default import HeaderDataDefault
 from amd_ucode_patch.structures.header_data_fam0fto12 import HeaderDataFam0fto12
+from amd_ucode_patch.structures.header_data_fam14to15 import HeaderDataFam14to15
 from amd_ucode_patch.structures.patch_level import PatchLevel
 
 #: Families with a header-data model of their own. Families 0x0f-0x12 (K8, K10,
 #: Griffin, Llano) share the triad format; Bobcat (0x14) and Bulldozer (0x15)
-#: are newer but do not, and fall through to the default.
+#: have no triads but do split an encrypted flag out of their equivalence id.
 _BY_FAMILY: dict[int, type[HeaderData]] = {
     0x0F: HeaderDataFam0fto12,
     0x10: HeaderDataFam0fto12,
     0x11: HeaderDataFam0fto12,
     0x12: HeaderDataFam0fto12,
+    0x14: HeaderDataFam14to15,
+    0x15: HeaderDataFam14to15,
 }
 
 
