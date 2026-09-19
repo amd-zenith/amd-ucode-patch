@@ -72,6 +72,15 @@ class HeaderDataFam14to15(HeaderData):
         )
 
     @property
+    def is_encrypted(self) -> bool:
+        """
+        Whether the header declares the body encrypted. These families carry no
+        body header, so this is the only place the signal lives -- which is why
+        this format answers where the others return ``None``.
+        """
+        return bool(self.encrypted)
+
+    @property
     def equivalence_id(self) -> int:
         """
         The id exactly as stored: the CPUID with the unencrypted-variant bit

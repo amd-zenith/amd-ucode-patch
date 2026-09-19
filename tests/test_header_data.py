@@ -23,6 +23,9 @@ from amd_ucode_patch.structures.header_data_default import HeaderDataDefault
 from amd_ucode_patch.structures.header_data_fam0fto12 import (
     HeaderDataFam0fto12,
 )
+from amd_ucode_patch.structures.header_data_fam14to15 import (
+    HeaderDataFam14to15,
+)
 from amd_ucode_patch.structures.header_data_registry import (
     header_data_class,
     is_modelled,
@@ -71,6 +74,14 @@ def _patch_level_for_family(family: int) -> PatchLevel:
     return PatchLevel(value=(family - 0xF) << 24)
 
 
+@pytest.mark.parametrize("family", [0x14, 0x15])
+def test_registry_resolves_the_bobcat_bulldozer_families(family):
+    """0x14/0x15 have a model of their own, but not the triad one."""
+    level = _patch_level_for_family(family)
+    assert is_modelled(level)
+    assert header_data_class(level) is HeaderDataFam14to15
+
+
 @pytest.mark.parametrize("family", [0x0F, 0x10, 0x11, 0x12])
 def test_registry_resolves_the_triad_families(family):
     """Families 0x0f-0x12 (K8, K10, Griffin, Llano) share the triad format."""
@@ -79,7 +90,7 @@ def test_registry_resolves_the_triad_families(family):
     assert header_data_class(level) is HeaderDataFam0fto12
 
 
-@pytest.mark.parametrize("family", [0x14, 0x15, 0x16, 0x17, 0x19, 0x1A, 0x99])
+@pytest.mark.parametrize("family", [0x16, 0x17, 0x19, 0x1A, 0x99])
 def test_registry_falls_back_to_the_default(family):
     """
     A family with no model of its own is neither refused nor guessed at: the
@@ -210,7 +221,7 @@ def test_cpuid_family_agrees_with_patch_level(corpus_dir: Path):
     agree = disagree = 0
     for path in sorted(corpus_dir.glob("*.bin")):
         level = patch_level_of(path)
-        if not is_modelled(level):
+        if header_data_class(level) is not HeaderDataFam0fto12:
             continue
         with warnings.catch_warnings():           # the corrected-family warnings
             warnings.simplefilter("ignore")
@@ -222,28 +233,28 @@ def test_cpuid_family_agrees_with_patch_level(corpus_dir: Path):
     assert (agree, disagree) == (42, 1)
 
 
-def test_op_triad_count_accounts_for_the_file(modelled_patch_file: Path):
+def test_op_triad_count_accounts_for_the_file(triad_patch_file: Path):
     """
     The cross-check that proves the decode: the field accounts for the whole
     file as a triad count, on 40/40 corpus patches.
     """
-    buf = modelled_patch_file.read_bytes()
-    data = _corpus_data(modelled_patch_file)
+    buf = triad_patch_file.read_bytes()
+    data = _corpus_data(triad_patch_file)
     assert len(buf) == _HEADER_REGION_SIZE + _TRIAD_SIZE * data.op_triad_count
 
 
-def test_init_flag_is_zero_or_one(modelled_patch_file: Path):
+def test_init_flag_is_zero_or_one(triad_patch_file: Path):
     """Patent US6438664B1 describes a flag, and the corpus only ever sets it."""
-    assert _corpus_data(modelled_patch_file).init_flag in (0x00, 0x01)
+    assert _corpus_data(triad_patch_file).init_flag in (0x00, 0x01)
 
 
-def test_op_triad_checksum_sums_the_triad_array(modelled_patch_file: Path):
+def test_op_triad_checksum_sums_the_triad_array(triad_patch_file: Path):
     """
     The decode that names the field: it is the u32 sum of exactly the region
     ``op_triad_count`` delimits. Holds 40/40, and no other region sums to it.
     """
-    buf = modelled_patch_file.read_bytes()
-    data = _corpus_data(modelled_patch_file)
+    buf = triad_patch_file.read_bytes()
+    data = _corpus_data(triad_patch_file)
     triads = buf[_HEADER_REGION_SIZE:
                  _HEADER_REGION_SIZE + _TRIAD_SIZE * data.op_triad_count]
     words = struct.unpack(f"<{len(triads) // 4}I", triads)

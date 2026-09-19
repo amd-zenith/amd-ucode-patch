@@ -31,7 +31,7 @@ class Body:
 
     @classmethod
     def from_bytes(cls, data: bytes, family: int,
-                   encrypted: bool = False) -> "Body":
+                   encrypted: bool | None = None) -> "Body":
         """
         Parse the body from ``data``, which is the body and nothing else, using
         the CPU ``family`` to pick the layout.
@@ -40,15 +40,17 @@ class Body:
         The remainder is handed to the body data registry, which picks the
         correct representation.
 
-        The encrypted signal comes from wherever the format keeps it: the body
-        header's flag, or ``encrypted`` signal that may come from the patch header.
+        The encrypted signal comes from wherever the format keeps it.
+        ``encrypted`` is the patch header's verdict, and ``None`` -- the
+        default -- means the header does not carry one, so the body header's
+        flag decides instead. A body that neither says anything about is
+        plaintext.
         """
         data = bytes(data)
         body_header = BodyHeader.from_bytes(data, family)
         remainder = data[BodyHeader.SIZE:] if body_header is not None else data
-        encrypted = encrypted or (
-            body_header is not None and bool(body_header.encrypted)
-        )
+        if encrypted is None:
+            encrypted = body_header is not None and bool(body_header.encrypted)
         body_data = body_data_from_bytes(family, encrypted, remainder)
         return cls(
             body_header=body_header,

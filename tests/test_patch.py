@@ -5,6 +5,7 @@
 
 import hashlib
 import struct
+import warnings
 
 import pytest
 
@@ -20,6 +21,14 @@ def _core(loader_id: int) -> bytes:
     # patch level family 0x14 (Bobcat): an opaque body, no signature slot, so a
     # minimal core needs no trailing block to parse.
     struct.pack_into("<I", core, 4, 0x05000000)
+    return bytes(core)
+
+
+def _unmodelled_core(loader_id: int) -> bytes:
+    """A 32-byte core whose family has neither a header-data model nor a
+    signature slot: extended family 0x8a, i.e. family 0x99."""
+    core = bytearray(_core(loader_id))
+    struct.pack_into("<I", core, 4, 0x8A000000)
     return bytes(core)
 
 
@@ -67,10 +76,17 @@ def test_unmodelled_family_parses_with_the_default_model():
     # A family with no model of its own still parses: the default header data
     # decodes the one field every format agrees on and keeps the rest verbatim,
     # so the patch round-trips without anything being guessed at. The loader id
-    # is irrelevant now -- dispatch is by family (0x14 here, an opaque one).
+    # is irrelevant -- dispatch is by family.
+    #
+    # Every real family is now either modelled (0x0f-0x12, 0x14, 0x15) or
+    # signed (0x16, 0x17+), and a signed one would carve a signature block out
+    # of the trailing bytes, so this uses a family that is neither. It warns
+    # that the family is not real silicon, which is the point.
     trailing = bytes(range(256)) * 3
-    raw = _core(0x8099) + trailing
-    patch = Patch.from_bytes(raw)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        raw = _unmodelled_core(0x8099) + trailing
+        patch = Patch.from_bytes(raw)
     assert isinstance(patch.header.data, HeaderDataDefault)
     assert patch.header.signature is None
     assert patch.body.to_bytes() == trailing

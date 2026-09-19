@@ -30,7 +30,11 @@ class Patch:
         """Parse a patch from its raw byte encoding."""
         data = bytes(data)
         header = Header.from_bytes(data)
-        body = Body.from_bytes(data[header.size:], header.patch_level.family)
+        body = Body.from_bytes(
+            data[header.size:],
+            header.patch_level.family,
+            header.data.is_encrypted
+        )
         return cls(header=header, body=body)
 
     @classmethod
