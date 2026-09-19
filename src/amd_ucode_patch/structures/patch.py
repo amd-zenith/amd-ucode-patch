@@ -84,16 +84,11 @@ class Patch:
         """
         cpuid = self.header.data.cpuid
         date = self.header.date
-        encrypted = (
-            self.body.body_header.encrypted
-            if self.body.body_header is not None
-            else 0
-        )
         return (
             f"family{self.header.patch_level.family:02x}"
             f"_cpuid{cpuid.cpuid_signature:08X}"
             f"_rev{self.header.patch_level}"
             f"_date{date.year:04}{date.month:02}{date.day:02}"
-            f"_enc{encrypted:02}"
+            f"_enc{int(self.body.is_encrypted):02}"
             f"_sha{self.sha256[:12]}.bin"
         )
