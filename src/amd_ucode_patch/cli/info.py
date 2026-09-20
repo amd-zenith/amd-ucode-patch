@@ -42,6 +42,22 @@ def _field(data: HeaderData, name: str) -> object | None:
 
 
 
+def _triad_count_matches(patch: Patch) -> bool | None:
+    """
+    Whether the triad count the header records matches the array the body
+    carves out, or ``None`` when this format carries neither.
+
+    Both halves have to agree: the array must divide exactly into triads, and
+    there must be as many as the header claims.
+    """
+    stored = _field(patch.header.data, "op_triad_count")
+    body_data = patch.body.body_data
+    counted = getattr(body_data, "op_triad_count", None)
+    if stored is None or counted is None:
+        return None
+    return bool(getattr(body_data, "holds_whole_triads", False)) and counted == stored
+
+
 def _checksum_matches(patch: Patch) -> bool | None:
     """
     Whether the checksum the header stores matches the one computed from the
@@ -125,6 +141,9 @@ def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str], bool
     colours["Patch level"] = (
         "red" if header.patch_level.is_anomalous else "green"
     )
+    triads_ok = _triad_count_matches(patch)
+    if triads_ok is not None:
+        colours["Triads"] = "green" if triads_ok else "red"
     checksum_ok = _checksum_matches(patch)
     if checksum_ok is not None:
         colours["Checksum"] = "green" if checksum_ok else "red"

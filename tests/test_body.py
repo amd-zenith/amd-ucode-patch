@@ -413,3 +413,70 @@ def test_a_flipped_bit_in_the_triads_breaks_the_checksum(patch_file: Path):
     patch.body.body_data.op_triads = bytes(blob)
     assert (patch.body.body_data.op_triad_checksum
             != patch.header.data.op_triad_checksum)
+
+
+# -- the triad geometry the count is expressed in --
+
+def test_triad_geometry_is_three_ops_and_a_sequence_word():
+    assert BodyDataFam0fto12.OP_SIZE == 8
+    assert BodyDataFam0fto12.OPS_PER_TRIAD == 3
+    assert BodyDataFam0fto12.SEQUENCE_WORD_SIZE == 4
+    assert BodyDataFam0fto12.OP_TRIAD_SIZE == 28
+    assert (BodyDataFam0fto12.OP_TRIAD_SIZE
+            == BodyDataFam0fto12.OPS_PER_TRIAD * BodyDataFam0fto12.OP_SIZE
+            + BodyDataFam0fto12.SEQUENCE_WORD_SIZE)
+
+
+def _triads(count: int) -> bytes:
+    """A body of eight match registers followed by ``count`` whole triads."""
+    return struct.pack("<8I", *range(8)) + bytes(count * BodyDataFam0fto12.OP_TRIAD_SIZE)
+
+
+def test_op_triad_count_is_derived_from_the_array():
+    body = Body.from_bytes(_triads(5), _MATCH_FAMILY)
+    assert body.body_data.op_triad_count == 5
+    assert body.body_data.holds_whole_triads
+
+
+def test_an_empty_array_holds_no_triads():
+    body = Body.from_bytes(struct.pack("<8I", *range(8)), _MATCH_FAMILY)
+    assert body.body_data.op_triad_count == 0
+    assert body.body_data.holds_whole_triads
+
+
+def test_a_partial_triad_is_not_whole():
+    body = Body.from_bytes(_triads(3) + b"leftover", _MATCH_FAMILY)
+    assert not body.body_data.holds_whole_triads
+    assert body.body_data.op_triad_count == 3        # floor: the whole ones
+
+
+# -- corpus-backed --
+
+def test_body_triad_count_matches_the_header(patch_file: Path):
+    """
+    The geometry cross-check: the array the body carves out is exactly as many
+    whole triads as the header says, with nothing left over.
+    """
+    patch = Patch.from_bytes(patch_file.read_bytes())
+    body_data = patch.body.body_data
+    if not isinstance(body_data, BodyDataFam0fto12):
+        pytest.skip("family has no body model of its own")
+    assert body_data.holds_whole_triads
+    assert body_data.op_triad_count == patch.header.data.op_triad_count
+    assert (len(body_data.op_triads)
+            == patch.header.data.op_triad_count * BodyDataFam0fto12.OP_TRIAD_SIZE)
+
+
+def test_the_whole_file_is_accounted_for(patch_file: Path):
+    """
+    Nothing is unexplained on these families: the core header, the match
+    registers and the triads add up to the file.
+    """
+    raw = patch_file.read_bytes()
+    patch = Patch.from_bytes(raw)
+    body_data = patch.body.body_data
+    if not isinstance(body_data, BodyDataFam0fto12):
+        pytest.skip("family has no body model of its own")
+    assert (len(raw) == patch.header.size
+            + body_data.match_registers.size
+            + patch.header.data.op_triad_count * BodyDataFam0fto12.OP_TRIAD_SIZE)
