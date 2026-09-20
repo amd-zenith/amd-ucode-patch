@@ -24,8 +24,8 @@ from amd_ucode_patch.structures.signature_fam16 import SignatureFam16
 from amd_ucode_patch.structures.signature_fam17plus import SignatureFam17Plus
 
 #: RSA-signed patches (family 0x17+) and family-0x16 signature-slot patches.
-_RSA_SIGNED = 338
-_FAM16_SIGNED = 14
+_RSA_SIGNED = 343
+_FAM16_SIGNED = 7
 
 
 def _rsa_signed(patch_file: Path) -> Patch | None:
