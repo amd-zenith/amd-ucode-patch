@@ -18,9 +18,10 @@ import pytest
 from amd_ucode_patch.structures.body import Body
 from amd_ucode_patch.structures.body_data_encrypted import EncryptedBodyData
 from amd_ucode_patch.structures.body_data_plaintext import PlaintextBodyData
+from amd_ucode_patch.structures.body_data_fam0fto12 import BodyDataFam0fto12
 from amd_ucode_patch.structures.body_data_registry import (
-    body_data_class,
     body_data_from_bytes,
+    is_modelled,
 )
 from amd_ucode_patch.structures.body_header import BodyHeader
 from amd_ucode_patch.structures.match_registers import MatchRegisters
@@ -157,8 +158,8 @@ def test_bodyless_family_is_plaintext():
 def test_body_data_variants_roundtrip():
     assert EncryptedBodyData(b"x").to_bytes() == b"x"
     assert EncryptedBodyData(b"x").is_encrypted
-    assert PlaintextBodyData(None, b"y").to_bytes() == b"y"
-    assert not PlaintextBodyData(None, b"y").is_encrypted
+    assert PlaintextBodyData(b"y").to_bytes() == b"y"
+    assert not PlaintextBodyData(b"y").is_encrypted
 
 
 def test_encrypted_flag_matches_what_the_patch_declares(patch_file: Path):
@@ -194,11 +195,12 @@ def _match_body(registers: list[int]) -> bytes:
 def test_match_registers_are_split_off():
     raw = _match_body(list(range(8)))
     body = Body.from_bytes(raw, _MATCH_FAMILY)
+    assert isinstance(body.body_data, BodyDataFam0fto12)
     registers = body.body_data.match_registers
     assert isinstance(registers, MatchRegisters)
     assert registers.values == list(range(8))
     assert registers.count == 8
-    assert body.body_data.unknown0 == b"microcode"
+    assert body.body_data.op_triads == b"microcode"
     assert body.to_bytes() == raw
 
 
@@ -209,14 +211,15 @@ def test_match_register_edit_persists():
     assert reparsed.body_data.match_registers.values[0] == 0xDEADBEEF
 
 
-def test_family_without_a_count_keeps_the_body_verbatim():
+def test_unmodelled_family_keeps_the_body_verbatim():
     """
-    A same-shaped body of a family with no known count is not sliced. ``None``,
-    not ``[]``: this format does not model them, rather than having none.
+    A same-shaped body of a family with no body model is not sliced: it gets
+    the plaintext model, which has no match registers to speak of at all.
     """
     raw = _match_body(list(range(8)))
     body = Body.from_bytes(raw, _OPAQUE_FAMILY)
-    assert body.body_data.match_registers is None
+    assert isinstance(body.body_data, PlaintextBodyData)
+    assert not hasattr(body.body_data, "match_registers")
     assert body.body_data.unknown0 == raw
 
 
@@ -239,8 +242,8 @@ def test_truncated_patch_of_a_match_family_is_refused():
         Patch.from_bytes(bytes(32) + b"12345678")
 
 
-def test_a_family_without_a_count_accepts_any_length():
-    """Only a declared count can be unmet, so these families never refuse."""
+def test_an_unmodelled_family_accepts_any_length():
+    """Only a modelled body can be unmet, so these families never refuse."""
     assert Body.from_bytes(b"short", _OPAQUE_FAMILY).to_bytes() == b"short"
     assert Body.from_bytes(b"", _OPAQUE_FAMILY).to_bytes() == b""
 
@@ -250,33 +253,43 @@ def test_a_body_that_exactly_fits_the_registers_is_decoded():
     raw = struct.pack("<8I", *range(8))
     body = Body.from_bytes(raw, _MATCH_FAMILY)
     assert body.body_data.match_registers.values == list(range(8))
-    assert body.body_data.unknown0 == b""
+    assert body.body_data.op_triads == b""
     assert body.to_bytes() == raw
 
 
-def test_only_a_declared_count_can_be_unmet():
+def test_only_a_modelled_body_can_be_unmet():
     """
-    The two cases a short body can land in: a family that declares a count
-    refuses it, one that declares none keeps it verbatim.
+    The two cases a short body can land in: a family whose body is modelled
+    refuses it, one with no model keeps it verbatim.
     """
     assert MatchRegisters.count_for_family(_MATCH_FAMILY) > 0
     assert MatchRegisters.count_for_family(_OPAQUE_FAMILY) == 0
     with pytest.raises(ValueError):
         Body.from_bytes(b"short", _MATCH_FAMILY)
-    assert Body.from_bytes(b"short", _OPAQUE_FAMILY).body_data.match_registers is None
+    assert Body.from_bytes(b"short", _OPAQUE_FAMILY).to_bytes() == b"short"
 
 
-def test_registry_does_not_decide_the_layout():
+def test_registry_picks_the_model_by_family():
     """
-    The registry picks the class from ``encrypted`` alone; which body a family
-    opens with match registers is the plaintext model's business, so the two
-    families below get the same class and differ only in what it decodes.
+    An encrypted body is opaque whatever its family; a plaintext one gets its
+    family's body model, or the unmodelled plaintext body when it has none.
     """
-    assert body_data_class(False) is PlaintextBodyData
-    assert body_data_class(True) is EncryptedBodyData
     raw = _match_body(list(range(8)))
-    assert body_data_from_bytes(_MATCH_FAMILY, False, raw).match_registers.values == list(range(8))
-    assert body_data_from_bytes(_OPAQUE_FAMILY, False, raw).match_registers is None
+    assert isinstance(body_data_from_bytes(_MATCH_FAMILY, True, raw), EncryptedBodyData)
+    modelled = body_data_from_bytes(_MATCH_FAMILY, False, raw)
+    assert isinstance(modelled, BodyDataFam0fto12)
+    assert modelled.match_registers.values == list(range(8))
+    assert isinstance(body_data_from_bytes(_OPAQUE_FAMILY, False, raw), PlaintextBodyData)
+
+
+@pytest.mark.parametrize("family", [0x0F, 0x10, 0x11, 0x12])
+def test_registry_models_the_match_register_families(family):
+    assert is_modelled(family)
+
+
+@pytest.mark.parametrize("family", [0x14, 0x15, 0x16, 0x17, 0x19, 0x1A, 0x99])
+def test_registry_leaves_every_other_family_unmodelled(family):
+    assert not is_modelled(family)
 
 
 # -- corpus-backed --
@@ -288,24 +301,25 @@ def test_match_registers_are_addresses_or_sentinels(patch_file: Path):
     """
     patch = Patch.from_bytes(patch_file.read_bytes())
     if patch.header.patch_level.family not in _MATCH_FAMILIES:
-        pytest.skip("family claims no match-register count")
+        pytest.skip("family has no body model of its own")
     registers = patch.body.body_data.match_registers
     assert registers.count == 8
     assert all(a == MatchRegisters.UNUSED_ADDRESS or a < 0x2000
                for a in registers.addresses)
-    # The array is what the body opens with, so its size is where unknown0 starts.
+    # The array is what the body opens with, so its size is where the triads start.
     assert registers.size == 32
-    assert patch.body.body_data.to_bytes()[registers.size:] == patch.body.body_data.unknown0
+    assert patch.body.body_data.to_bytes()[registers.size:] == patch.body.body_data.op_triads
 
 
-def test_only_the_proven_families_decode_match_registers(patch_file: Path):
-    """Every other corpus body keeps all of its bytes in unknown0 / opaque."""
+def test_only_the_modelled_families_decode_match_registers(patch_file: Path):
+    """Every other corpus body keeps all of its bytes verbatim or opaque."""
     patch = Patch.from_bytes(patch_file.read_bytes())
     if patch.header.patch_level.family in _MATCH_FAMILIES:
-        pytest.skip("family claims a match-register count")
+        pytest.skip("family has a body model of its own")
     if patch.body.is_encrypted:
         pytest.skip("encrypted bodies are opaque")
-    assert patch.body.body_data.match_registers is None
+    assert isinstance(patch.body.body_data, PlaintextBodyData)
+    assert not hasattr(patch.body.body_data, "match_registers")
 
 
 def test_the_header_signal_is_tri_state(patch_file: Path):

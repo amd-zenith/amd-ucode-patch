@@ -2,29 +2,42 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 """
-Which body-data class a body's ``encrypted`` flag selects.
+Which body-data model a patch's family and ``encrypted`` flag select.
 """
 
 from __future__ import annotations
 
 from amd_ucode_patch.structures.body_data import BodyData
 from amd_ucode_patch.structures.body_data_encrypted import EncryptedBodyData
+from amd_ucode_patch.structures.body_data_fam0fto12 import BodyDataFam0fto12
 from amd_ucode_patch.structures.body_data_plaintext import PlaintextBodyData
 
+#: Families whose body has a model of its own. Families 0x0f-0x12 (K8, K10,
+#: Griffin, Llano) open their body with the match registers; every later family
+#: falls through to the unmodelled plaintext body.
+_BY_FAMILY: dict[int, type[BodyData]] = {
+    0x0F: BodyDataFam0fto12,
+    0x10: BodyDataFam0fto12,
+    0x11: BodyDataFam0fto12,
+    0x12: BodyDataFam0fto12,
+}
 
-def body_data_class(encrypted: bool) -> type[BodyData]:
-    """The body-data class for an ``encrypted`` (or not) body."""
-    return EncryptedBodyData if encrypted else PlaintextBodyData
+
+def is_modelled(family: int) -> bool:
+    """Whether this family's body has a model of its own."""
+    return family in _BY_FAMILY
 
 
 def body_data_from_bytes(family: int, encrypted: bool, data: bytes) -> BodyData:
     """
     Parse the body data from its raw bytes, opaque when ``encrypted``.
 
-    The ``encrypted`` flag alone picks the class. ``family`` is passed through
-    to the plaintext model, which is what knows the layout a family opens its
-    body with; it plays no part in the choice made here.
+    An encrypted body is opaque whatever its family. A plaintext one gets its
+    family's model, or the unmodelled plaintext body when the family has none.
     """
     if encrypted:
         return EncryptedBodyData(bytes(data))
-    return PlaintextBodyData.from_bytes(data, family)
+    model = _BY_FAMILY.get(family)
+    if model is None:
+        return PlaintextBodyData(bytes(data))
+    return model.from_bytes(data, family)
