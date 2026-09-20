@@ -351,3 +351,65 @@ def test_an_explicit_header_verdict_wins():
     """Where the header does speak, it decides, body header or not."""
     assert Body.from_bytes(b"payload", _OPAQUE_FAMILY, True).is_encrypted
     assert not Body.from_bytes(b"payload", _OPAQUE_FAMILY, False).is_encrypted
+
+
+# -- the triad checksum the header records --
+
+def test_op_triad_checksum_sums_the_triads():
+    raw = struct.pack("<8I", *range(8)) + struct.pack("<3I", 1, 2, 0xFFFFFFFF)
+    body = Body.from_bytes(raw, _MATCH_FAMILY)
+    assert body.body_data.op_triad_checksum == (1 + 2 + 0xFFFFFFFF) & 0xFFFFFFFF
+
+
+def test_op_triad_checksum_wraps_at_32_bits():
+    raw = struct.pack("<8I", *range(8)) + struct.pack("<2I", 0xFFFFFFFF, 2)
+    body = Body.from_bytes(raw, _MATCH_FAMILY)
+    assert body.body_data.op_triad_checksum == 1
+
+
+def test_op_triad_checksum_of_an_empty_array_is_zero():
+    body = Body.from_bytes(struct.pack("<8I", *range(8)), _MATCH_FAMILY)
+    assert body.body_data.op_triads == b""
+    assert body.body_data.op_triad_checksum == 0
+
+
+def test_op_triad_checksum_refuses_a_partial_word():
+    """A real triad array is 28 bytes per triad, so always whole u32 words."""
+    body = Body.from_bytes(_match_body(list(range(8))), _MATCH_FAMILY)
+    assert len(body.body_data.op_triads) % 4          # b"microcode" is 9 bytes
+    with pytest.raises(ValueError):
+        body.body_data.op_triad_checksum
+
+
+def test_op_triad_checksum_tracks_an_edit():
+    raw = struct.pack("<8I", *range(8)) + struct.pack("<2I", 1, 2)
+    body = Body.from_bytes(raw, _MATCH_FAMILY)
+    before = body.body_data.op_triad_checksum
+    body.body_data.op_triads = struct.pack("<2I", 1, 3)
+    assert body.body_data.op_triad_checksum == before + 1
+
+
+# -- corpus-backed --
+
+def test_body_checksum_matches_the_header(patch_file: Path):
+    """
+    The cross-check the two sections make on each other: the header stores the
+    u32 sum of exactly the region the body model carves out as the triads.
+    """
+    patch = Patch.from_bytes(patch_file.read_bytes())
+    if not isinstance(patch.body.body_data, BodyDataFam0fto12):
+        pytest.skip("family has no body model of its own")
+    assert (patch.body.body_data.op_triad_checksum
+            == patch.header.data.op_triad_checksum)
+
+
+def test_a_flipped_bit_in_the_triads_breaks_the_checksum(patch_file: Path):
+    """The check has to be sensitive to the data it covers."""
+    patch = Patch.from_bytes(patch_file.read_bytes())
+    if not isinstance(patch.body.body_data, BodyDataFam0fto12):
+        pytest.skip("family has no body model of its own")
+    blob = bytearray(patch.body.body_data.op_triads)
+    blob[0] ^= 0x01
+    patch.body.body_data.op_triads = bytes(blob)
+    assert (patch.body.body_data.op_triad_checksum
+            != patch.header.data.op_triad_checksum)

@@ -42,19 +42,19 @@ def _field(data: HeaderData, name: str) -> object | None:
 
 
 
-def _checksum_matches(data: HeaderData, raw: bytes) -> bool | None:
+def _checksum_matches(patch: Patch) -> bool | None:
     """
-    Whether the stored checksum matches the content it covers, or ``None`` when
-    this format has no checksum or the patch is too short to compute one.
+    Whether the checksum the header stores matches the one computed from the
+    body it covers, or ``None`` when this format carries neither.
     """
-    stored = _field(data, "op_triad_checksum")
-    compute = getattr(data, "compute_op_triad_checksum", None)
-    if stored is None or compute is None:
+    stored = _field(patch.header.data, "op_triad_checksum")
+    if stored is None:
         return None
     try:
-        return compute(raw) == stored
-    except ValueError:
+        computed = patch.body.body_data.op_triad_checksum
+    except (AttributeError, ValueError):
         return None
+    return computed == stored
 
 
 def _match_registers(registers: MatchRegisters | None) -> str:
@@ -125,7 +125,7 @@ def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str], bool
     colours["Patch level"] = (
         "red" if header.patch_level.is_anomalous else "green"
     )
-    checksum_ok = _checksum_matches(data, raw)
+    checksum_ok = _checksum_matches(patch)
     if checksum_ok is not None:
         colours["Checksum"] = "green" if checksum_ok else "red"
     # Cross-check the patch level against the header's CPUID field. Newer patch

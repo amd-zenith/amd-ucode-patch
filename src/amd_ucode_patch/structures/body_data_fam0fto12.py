@@ -9,6 +9,7 @@ match registers and continues with the micro-op triad array.
 
 from __future__ import annotations
 
+import struct
 from dataclasses import dataclass
 
 from amd_ucode_patch.structures.body_data import BodyData
@@ -51,6 +52,24 @@ class BodyDataFam0fto12(BodyData):
                 f"registers, so it has no family-0x12-or-older body data"
             )
         return cls(match_registers=registers, op_triads=data[registers.size:])
+
+    @property
+    def op_triad_checksum(self) -> int:
+        """
+        The u32 sum of the micro-op triad array, truncated to 32 bits. The
+        header records this same value, so the two disagreeing means the patch
+        data did not survive intact.
+
+        Raises :class:`ValueError` if the array is not a whole number of u32
+        words, which a real triad array always is.
+        """
+        if len(self.op_triads) % 4:
+            raise ValueError(
+                f"micro-op triad array is not a whole number of u32 words: "
+                f"{len(self.op_triads)} bytes"
+            )
+        words = struct.unpack(f"<{len(self.op_triads) // 4}I", self.op_triads)
+        return sum(words) & 0xFFFFFFFF
 
     def to_bytes(self) -> bytes:
         """Serialize the body data back to its exact byte encoding."""
