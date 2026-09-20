@@ -5,8 +5,8 @@
 Header data for Bobcat (0x14) and Bulldozer (0x15).
 
 Same 22-byte layout as the default model, except that one bit of the
-equivalence id is not part of the CPUID and it indicates whether the
-body is encrypted.
+equivalence id is not part of the CPUID: it says whether the body is encrypted.
+These families carry no body header, so it is the only place the signal lives.
 """
 
 from __future__ import annotations
@@ -28,13 +28,11 @@ class HeaderDataFam14to15(HeaderData):
 
     #: Struct layout
     _FMT: ClassVar[str] = "<14sH6s"
-    #: The bit of the equivalence id that is not part of the CPUID. It marks
-    #: the *unencrypted* variant: AMD ships some of these patches twice under
-    #: two ids, and the copy whose id has this bit set is in the clear while the
-    #: one without it is encrypted.
+    #: Bit of the equivalence id that is not part of the CPUID: set marks the
+    #: unencrypted variant of a patch, clear the encrypted one.
     _UNENCRYPTED_BIT: ClassVar[int] = 1 << 11
 
-    #: Not modelled, kept verbatim. Zero across the corpus for both families.
+    #: Not modelled, kept verbatim.
     #: Offset 10, 14 bytes.
     unknown0: bytes
     #: Whether the patch body is encrypted: the inverse of bit 11 of the
@@ -84,8 +82,7 @@ class HeaderDataFam14to15(HeaderData):
     def equivalence_id(self) -> int:
         """
         The id exactly as stored: the CPUID with the unencrypted-variant bit
-        folded back in. What the container's equivalence table is keyed on, and
-        what the collection's filenames carry.
+        folded back in. What the container's equivalence table is keyed on.
         """
         return self.cpuid.ucode_signature | (
             0 if self.encrypted else self._UNENCRYPTED_BIT

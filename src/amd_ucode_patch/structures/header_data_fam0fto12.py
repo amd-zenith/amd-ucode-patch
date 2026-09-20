@@ -26,7 +26,7 @@ class HeaderDataFam0fto12(HeaderData):
     """
 
     #: Struct layout
-    _FMT: ClassVar[str] = "<BBI8sH6s"
+    _FMT: ClassVar[str] = "<BBII4sH6s"
 
     #: Length of the patch data block, in micro-op triads. A triad is three
     #: micro-ops and a sequence control field.
@@ -52,8 +52,15 @@ class HeaderDataFam0fto12(HeaderData):
     #:   - zentool: ``checksum``
     #:   - AMD patent US6438664B1: check sum
     op_triad_checksum: int
-    #: Not modelled yet, kept verbatim.
-    #: Offset 16, 8 bytes.
+    #: PCI device id of the northbridge this patch is restricted to, or zero
+    #: for no restriction.
+    #: Offset 16, 4 bytes.
+    #: Other names:
+    #:   - Linux kernel: ``nb_dev_id``
+    #:   - zentool: ``northbridge``
+    nb_dev_id: int
+    #: Not modelled, kept verbatim.
+    #: Offset 20, 4 bytes.
     unknown0: bytes
     #: Processor the patch targets, as family, model and stepping. It is the
     #: key the container's equivalence table maps a CPUID onto, so the loader
@@ -63,7 +70,7 @@ class HeaderDataFam0fto12(HeaderData):
     #:   - Linux kernel: ``processor_rev_id``
     #:   - zentool: ``cpuid`` (a u32 spanning offsets 24-27)
     cpuid: AmdCpuId
-    #: Not modelled yet, kept verbatim.
+    #: Not modelled, kept verbatim.
     #: Offset 26, 6 bytes.
     unknown1: bytes
 
@@ -75,12 +82,13 @@ class HeaderDataFam0fto12(HeaderData):
                 f"not enough bytes for family-0x12-or-older header data: got {len(data)}, "
                 f"need {cls.SIZE}"
             )
-        (op_triad_count, init_flag, op_triad_checksum,
-         unknown0, cpuid, unknown1) = struct.unpack_from(cls._FMT, data, 0)
+        (op_triad_count, init_flag, op_triad_checksum, nb_dev_id, unknown0,
+         cpuid, unknown1) = struct.unpack_from(cls._FMT, data, 0)
         return cls(
             op_triad_count=op_triad_count,
             init_flag=init_flag,
             op_triad_checksum=op_triad_checksum,
+            nb_dev_id=nb_dev_id,
             unknown0=unknown0,
             cpuid=AmdCpuId.from_ucode_signature(cpuid),
             unknown1=unknown1,
@@ -93,6 +101,7 @@ class HeaderDataFam0fto12(HeaderData):
             self.op_triad_count,
             self.init_flag,
             self.op_triad_checksum,
+            self.nb_dev_id,
             self.unknown0,
             self.cpuid.ucode_signature,
             self.unknown1,
