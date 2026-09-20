@@ -27,7 +27,11 @@ from pathlib import Path
 
 import pytest
 
-from amd_ucode_patch.structures.header_data_registry import is_modelled
+from amd_ucode_patch.structures.header_data_fam0fto12 import HeaderDataFam0fto12
+from amd_ucode_patch.structures.header_data_registry import (
+    header_data_class,
+    is_modelled,
+)
 from amd_ucode_patch.structures.patch_level import PatchLevel
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -65,6 +69,20 @@ def modelled_patch_file(patch_file: Path) -> Path:
     """
     if not is_modelled(patch_level_of(patch_file)):
         pytest.skip("family has no header-data model of its own")
+    return patch_file
+
+
+@pytest.fixture
+def triad_patch_file(patch_file: Path) -> Path:
+    """
+    A corpus file whose family uses the micro-op triad header-data model.
+
+    Narrower than :func:`modelled_patch_file`: a family can have a model of its
+    own without having triads -- Bobcat and Bulldozer (0x14, 0x15) do -- so the
+    tests that assert triad fields key on the model, not on being modelled.
+    """
+    if header_data_class(patch_level_of(patch_file)) is not HeaderDataFam0fto12:
+        pytest.skip("family does not use the triad header-data model")
     return patch_file
 
 

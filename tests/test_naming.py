@@ -28,10 +28,15 @@ _NAME = re.compile(
 
 
 def _synthetic_patch() -> bytes:
-    """A minimal patch in a modelled, unsigned format (no body header)."""
+    """
+    A minimal patch in a modelled, unsigned format (no body header).
+
+    The zero patch level makes it family 0x0f, whose body opens with eight
+    match registers, so it carries a body long enough to hold them.
+    """
     core = bytearray(Header.CORE_SIZE)
     struct.pack_into("<H", core, 8, 0x8000)
-    return bytes(core)
+    return bytes(core) + bytes(32)
 
 
 def _parts(name: str) -> re.Match:
@@ -46,24 +51,18 @@ def test_name_always_includes_enc(patch_file: Path):
     assert re.search(r"_enc\d{2}_sha", patch.name_canonical)
 
 
-def test_reproduces_the_corpus_core_and_sha(patch_file: Path):
+def test_reproduces_the_corpus_name(patch_file: Path):
     """
-    The core, the ``_enc`` value and the SHA match the stored name. The stored
-    name may omit ``_enc`` (older families); the expected name always includes
-    it, defaulting to ``00``.
+    Every stored name is exactly what the tool emits, component for component:
+    family, CPUID, rev, date, ``_enc`` and SHA.
 
-    The family component follows the patch level, which is authoritative and can
-    disagree with the equivalence-id family the collection used to name a few
-    pre-Zen files; the stored core's family is normalized to it before comparing.
+    The collection is named with this scheme, so this is the whole-name
+    regression: a change to any component -- including ``_enc``, which now
+    follows the body's verdict rather than only a body header's flag -- shows
+    up here.
     """
     patch = Patch.from_bytes(patch_file.read_bytes())
-    parts = _parts(patch_file.name)
-    body_header = patch.body.body_header
-    enc = body_header.encrypted if body_header is not None else 0
-    core = re.sub(r"^family[0-9a-f]+",
-                  f"family{patch.header.patch_level.family:02x}", parts["core"])
-    expected = f"{core}_enc{enc:02}_sha{parts['sha']}.bin"
-    assert patch.name_canonical == expected
+    assert patch.name_canonical == patch_file.name
 
 
 def test_family_follows_the_patch_level_not_the_equivalence_id(corpus_dir: Path):
@@ -92,11 +91,18 @@ def test_enc_comes_from_the_body_header(patch_file: Path):
     assert f"_enc{enc:02}_" in patch.name_canonical
 
 
-def test_enc_defaults_to_00_without_a_body_header(patch_file: Path):
+def test_enc_follows_the_header_without_a_body_header(patch_file: Path):
+    """
+    Without a body header ``_enc`` is not simply ``00``: it follows whatever the
+    patch header declared, and only falls back to ``00`` where the header
+    declares nothing (``is_encrypted`` is ``None``).
+    """
     patch = Patch.from_bytes(patch_file.read_bytes())
     if patch.body.body_header is not None:
         pytest.skip("patch has a body header")
-    assert "_enc00_" in patch.name_canonical
+    declared = patch.header.data.is_encrypted
+    assert patch.body.is_encrypted == bool(declared)
+    assert f"_enc{int(bool(declared)):02}_" in patch.name_canonical
 
 
 def test_synthetic_patch_gets_enc00():
