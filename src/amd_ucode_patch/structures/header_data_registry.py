@@ -11,6 +11,7 @@ from amd_ucode_patch.structures.header_data import HeaderData
 from amd_ucode_patch.structures.header_data_default import HeaderDataDefault
 from amd_ucode_patch.structures.header_data_fam0fto12 import HeaderDataFam0fto12
 from amd_ucode_patch.structures.header_data_fam14to15 import HeaderDataFam14to15
+from amd_ucode_patch.structures.header_data_fam19to1a import HeaderDataFam19to1a
 from amd_ucode_patch.structures.patch_level import PatchLevel
 
 #: Families with a header-data model of their own. Families 0x0f-0x12 (K8, K10,
@@ -23,6 +24,8 @@ _BY_FAMILY: dict[int, type[HeaderData]] = {
     0x12: HeaderDataFam0fto12,
     0x14: HeaderDataFam14to15,
     0x15: HeaderDataFam14to15,
+    0x19: HeaderDataFam19to1a,
+    0x1A: HeaderDataFam19to1a,
 }
 
 

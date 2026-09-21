@@ -29,7 +29,7 @@ from amd_ucode_patch.structures.patch import Patch
 #: the body data, with derived values shown next to the field they come from.
 COLS = ["File", "Date", "Patch level", "Loader ID",
         # the header data, offsets 10-31 in order
-        "Triads", "Init", "Checksum", "NB dev", "CPUID",
+        "Size units", "Triads", "Init", "Checksum", "Req PL", "NB dev", "CPUID",
         # then the signature block, the body header and the body data
         "Signed", "Encrypted", "Body PL", "Match regs", "Size"]
 
@@ -41,6 +41,33 @@ def _field(data: HeaderData, name: str) -> object | None:
     """A header-data field, or ``None`` when this format does not model it."""
     return getattr(data, name, None)
 
+
+
+def _declared_size_matches(patch: Patch, raw: bytes) -> bool | None:
+    """
+    Whether the size the header declares matches the file, or ``None`` where
+    the format declares none.
+    """
+    declared = getattr(patch.header.data, "patch_size", None)
+    return None if declared is None else declared == len(raw)
+
+
+def _required_level_agrees(patch: Patch) -> bool | None:
+    """
+    Whether the patch level the header names as its prerequisite is consistent
+    with the patch's own, or ``None`` where the format names none.
+
+    It has to name the same processor and be older, or it is not a level this
+    patch could be superseding.
+    """
+    required = getattr(patch.header.data, "required_patch_level", None)
+    if required is None:
+        return None
+    own = patch.header.patch_level
+    if required.cpuid is None or own.cpuid is None:
+        return None
+    return (required.cpuid.ucode_signature == own.cpuid.ucode_signature
+            and required.value < own.value)
 
 
 def _encryption_agrees(patch: Patch) -> bool | None:
@@ -117,6 +144,7 @@ def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str], bool
     data = header.data
     body_header = patch.body.body_header
 
+    size_units = _field(data, "patch_size_units")
     triads = _field(data, "op_triad_count")
     # The same "run the patch on load" signal lives in the pre-Zen header data
     # (``init_flag``) and in the Zen body header; show whichever one this format
@@ -126,6 +154,7 @@ def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str], bool
         init = body_header.init_flag
     checksum = _field(data, "op_triad_checksum")
     cpuid = _field(data, "cpuid")
+    required_pl = _field(data, "required_patch_level")
     nb_dev_id = _field(data, "nb_dev_id")
     pl_family = header.patch_level.family
     # The body knows whether it is encrypted whatever its format: the flag when
@@ -146,9 +175,11 @@ def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str], bool
         str(header.date),
         f"{header.patch_level} (fam {pl_family:#04x})",
         str(header.loader_id),
+        str(size_units) if size_units is not None else _NA,
         str(triads) if triads is not None else _NA,
         ("yes" if init else "no") if init is not None else _NA,
         f"{checksum:08x}" if checksum is not None else _NA,
+        str(required_pl) if required_pl is not None else _NA,
         f"{nb_dev_id:08x}" if nb_dev_id is not None else _NA,
         f"{cpuid.ucode_signature:04x} ({cpuid.description})"
         if cpuid is not None else _NA,
@@ -173,6 +204,12 @@ def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str], bool
     encryption_ok = _encryption_agrees(patch)
     if encryption_ok is not None:
         colours["Encrypted"] = "green" if encryption_ok else "red"
+    size_ok = _declared_size_matches(patch, raw)
+    if size_ok is not None:
+        colours["Size units"] = "green" if size_ok else "red"
+    required_ok = _required_level_agrees(patch)
+    if required_ok is not None:
+        colours["Req PL"] = "green" if required_ok else "red"
     # Cross-check the patch level against the header's CPUID field. Newer patch
     # levels pack the whole CPUID, so the whole signature is checked; older ones
     # carry only the family, so just that is.

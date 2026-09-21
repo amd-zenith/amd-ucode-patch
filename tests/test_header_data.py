@@ -26,6 +26,9 @@ from amd_ucode_patch.structures.header_data_fam0fto12 import (
 from amd_ucode_patch.structures.header_data_fam14to15 import (
     HeaderDataFam14to15,
 )
+from amd_ucode_patch.structures.header_data_fam19to1a import (
+    HeaderDataFam19to1a,
+)
 from amd_ucode_patch.structures.header_data_registry import (
     header_data_class,
     is_modelled,
@@ -74,6 +77,14 @@ def _patch_level_for_family(family: int) -> PatchLevel:
     return PatchLevel(value=(family - 0xF) << 24)
 
 
+@pytest.mark.parametrize("family", [0x19, 0x1A])
+def test_registry_resolves_the_zen3_zen5_families(family):
+    """0x19/0x1a declare a patch size and a required patch level."""
+    level = _patch_level_for_family(family)
+    assert is_modelled(level)
+    assert header_data_class(level) is HeaderDataFam19to1a
+
+
 @pytest.mark.parametrize("family", [0x14, 0x15])
 def test_registry_resolves_the_bobcat_bulldozer_families(family):
     """0x14/0x15 have a model of their own, but not the triad one."""
@@ -90,7 +101,7 @@ def test_registry_resolves_the_triad_families(family):
     assert header_data_class(level) is HeaderDataFam0fto12
 
 
-@pytest.mark.parametrize("family", [0x16, 0x17, 0x19, 0x1A, 0x99])
+@pytest.mark.parametrize("family", [0x16, 0x17, 0x99])
 def test_registry_falls_back_to_the_default(family):
     """
     A family with no model of its own is neither refused nor guessed at: the
