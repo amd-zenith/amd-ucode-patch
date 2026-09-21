@@ -424,18 +424,14 @@ def test_a_flipped_bit_in_the_triads_breaks_the_checksum(patch_file: Path):
 # -- the triad geometry the count is expressed in --
 
 def test_triad_geometry_is_three_ops_and_a_sequence_word():
-    assert BodyDataFam0fto12.OP_SIZE == 8
-    assert BodyDataFam0fto12.OPS_PER_TRIAD == 3
-    assert BodyDataFam0fto12.SEQUENCE_WORD_SIZE == 4
-    assert BodyDataFam0fto12.OP_TRIAD_SIZE == 28
-    assert (BodyDataFam0fto12.OP_TRIAD_SIZE
-            == BodyDataFam0fto12.OPS_PER_TRIAD * BodyDataFam0fto12.OP_SIZE
-            + BodyDataFam0fto12.SEQUENCE_WORD_SIZE)
+    g = BodyDataFam0fto12.GEOMETRY
+    assert (g.op_size, g.ops_per_group, g.sequence_word_size) == (8, 3, 4)
+    assert g.group_size == 28
 
 
 def _triads(count: int) -> bytes:
     """A body of eight match registers followed by ``count`` whole triads."""
-    return struct.pack("<8I", *range(8)) + bytes(count * BodyDataFam0fto12.OP_TRIAD_SIZE)
+    return struct.pack("<8I", *range(8)) + bytes(count * BodyDataFam0fto12.GEOMETRY.group_size)
 
 
 def test_op_triad_count_is_derived_from_the_array():
@@ -470,7 +466,7 @@ def test_body_triad_count_matches_the_header(patch_file: Path):
     assert body_data.holds_whole_triads
     assert body_data.op_triad_count == patch.header.data.op_triad_count
     assert (len(body_data.op_triads)
-            == patch.header.data.op_triad_count * BodyDataFam0fto12.OP_TRIAD_SIZE)
+            == patch.header.data.op_triad_count * BodyDataFam0fto12.GEOMETRY.group_size)
 
 
 def test_the_whole_file_is_accounted_for(patch_file: Path):
@@ -485,7 +481,7 @@ def test_the_whole_file_is_accounted_for(patch_file: Path):
         pytest.skip("family has no body model of its own")
     assert (len(raw) == patch.header.size
             + body_data.match_registers.size
-            + patch.header.data.op_triad_count * BodyDataFam0fto12.OP_TRIAD_SIZE)
+            + patch.header.data.op_triad_count * BodyDataFam0fto12.GEOMETRY.group_size)
 
 
 # -- the frame families 0x14 and 0x15 open their body with --

@@ -15,6 +15,7 @@ from typing import ClassVar
 
 from amd_ucode_patch.structures.body_data import BodyData
 from amd_ucode_patch.structures.match_registers import MatchRegisters
+from amd_ucode_patch.structures.op_group_geometry import OpGroupGeometry
 
 
 @dataclass
@@ -26,14 +27,8 @@ class BodyDataFam0fto12(BodyData):
 
     is_encrypted = False
 
-    #: Size of one micro-op, in bytes.
-    OP_SIZE: ClassVar[int] = 8
-    #: Micro-ops per triad.
-    OPS_PER_TRIAD: ClassVar[int] = 3
-    #: Size of the sequence control word that ends a triad, in bytes.
-    SEQUENCE_WORD_SIZE: ClassVar[int] = 4
-    #: Encoded size of one triad: three micro-ops and a sequence control word.
-    OP_TRIAD_SIZE: ClassVar[int] = OPS_PER_TRIAD * OP_SIZE + SEQUENCE_WORD_SIZE
+    #: How this format lays out one micro-op triad.
+    GEOMETRY: ClassVar[OpGroupGeometry] = OpGroupGeometry.for_family(0x0F)
 
     #: The match registers the body opens with.
     #: Offset 0, :attr:`MatchRegisters.size` bytes.
@@ -70,7 +65,7 @@ class BodyDataFam0fto12(BodyData):
         same count, so the two disagreeing means the array is not the length
         the header claims.
         """
-        return len(self.op_triads) // self.OP_TRIAD_SIZE
+        return self.GEOMETRY.group_count(len(self.op_triads))
 
     @property
     def holds_whole_triads(self) -> bool:
@@ -78,7 +73,7 @@ class BodyDataFam0fto12(BodyData):
         Whether the array divides exactly into triads, with no bytes left over.
         A real one always does; a short or padded array does not.
         """
-        return len(self.op_triads) % self.OP_TRIAD_SIZE == 0
+        return self.GEOMETRY.holds_whole_groups(len(self.op_triads))
 
     @property
     def op_triad_checksum(self) -> int:
