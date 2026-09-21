@@ -10,16 +10,20 @@ from __future__ import annotations
 from amd_ucode_patch.structures.body_data import BodyData
 from amd_ucode_patch.structures.body_data_encrypted import EncryptedBodyData
 from amd_ucode_patch.structures.body_data_fam0fto12 import BodyDataFam0fto12
+from amd_ucode_patch.structures.body_data_fam14to15 import BodyDataFam14to15
 from amd_ucode_patch.structures.body_data_plaintext import PlaintextBodyData
 
 #: Families whose body has a model of its own. Families 0x0f-0x12 (K8, K10,
-#: Griffin, Llano) open their body with the match registers; every later family
-#: falls through to the unmodelled plaintext body.
+#: Griffin, Llano) open their body with the match registers; Bobcat (0x14) and
+#: Bulldozer (0x15) open theirs with a frame. Every later family falls through
+#: to the unmodelled plaintext body.
 _BY_FAMILY: dict[int, type[BodyData]] = {
     0x0F: BodyDataFam0fto12,
     0x10: BodyDataFam0fto12,
     0x11: BodyDataFam0fto12,
     0x12: BodyDataFam0fto12,
+    0x14: BodyDataFam14to15,
+    0x15: BodyDataFam14to15,
 }
 
 

@@ -18,6 +18,7 @@ from rich.table import Table
 
 from amd_ucode_patch.cli.banner import BANNER
 from amd_ucode_patch.cli.paths import expand_paths
+from amd_ucode_patch.structures.body_data_fam14to15 import BodyDataFam14to15
 from amd_ucode_patch.structures.header_data import HeaderData
 from amd_ucode_patch.structures.header_data_default import HeaderDataDefault
 from amd_ucode_patch.structures.match_registers import MatchRegisters
@@ -40,6 +41,24 @@ def _field(data: HeaderData, name: str) -> object | None:
     """A header-data field, or ``None`` when this format does not model it."""
     return getattr(data, name, None)
 
+
+
+def _encryption_agrees(patch: Patch) -> bool | None:
+    """
+    Whether the body backs up the encrypted flag the header carries, or ``None``
+    where the header carries no such flag.
+
+    The families that carry it open their body with a frame that sits inside
+    the encrypted region, so the frame decodes on a plaintext body and reads as
+    ciphertext on an encrypted one. Agreeing means two independent signals say
+    the same thing.
+    """
+    declared = patch.header.data.is_encrypted
+    if declared is None:
+        return None
+    readable = BodyDataFam14to15.frame_is_readable(
+        patch.body.to_bytes(), patch.header.patch_level)
+    return readable is not declared
 
 
 def _triad_count_matches(patch: Patch) -> bool | None:
@@ -113,7 +132,11 @@ def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str], bool
     # there is a body header to carry one, and plaintext when there is not. The
     # mirrored patch level does live only in the body header.
     encrypted = patch.body.is_encrypted
-    body_pl = body_header.patch_level if body_header is not None else None
+    # The body's copy of the header's patch level, wherever the format keeps
+    # it: in the body header on the signed families, in the frame the body
+    # opens with on Bobcat and Bulldozer.
+    body_pl = (body_header.patch_level if body_header is not None
+               else getattr(patch.body.body_data, "patch_level", None))
     # The match registers live in the body data, and only a plaintext body that
     # its family gives a count for has them; an encrypted one has no such field.
     match_registers = getattr(patch.body.body_data, "match_registers", None)
@@ -147,6 +170,9 @@ def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str], bool
     checksum_ok = _checksum_matches(patch)
     if checksum_ok is not None:
         colours["Checksum"] = "green" if checksum_ok else "red"
+    encryption_ok = _encryption_agrees(patch)
+    if encryption_ok is not None:
+        colours["Encrypted"] = "green" if encryption_ok else "red"
     # Cross-check the patch level against the header's CPUID field. Newer patch
     # levels pack the whole CPUID, so the whole signature is checked; older ones
     # carry only the family, so just that is.

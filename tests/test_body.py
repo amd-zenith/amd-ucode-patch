@@ -19,6 +19,7 @@ from amd_ucode_patch.structures.body import Body
 from amd_ucode_patch.structures.body_data_encrypted import EncryptedBodyData
 from amd_ucode_patch.structures.body_data_plaintext import PlaintextBodyData
 from amd_ucode_patch.structures.body_data_fam0fto12 import BodyDataFam0fto12
+from amd_ucode_patch.structures.body_data_fam14to15 import BodyDataFam14to15
 from amd_ucode_patch.structures.body_data_registry import (
     body_data_from_bytes,
     is_modelled,
@@ -26,12 +27,18 @@ from amd_ucode_patch.structures.body_data_registry import (
 from amd_ucode_patch.structures.body_header import BodyHeader
 from amd_ucode_patch.structures.match_registers import MatchRegisters
 from amd_ucode_patch.structures.patch import Patch
+from amd_ucode_patch.structures.patch_level import PatchLevel
 
-#: A family whose body is opaque, and one whose body begins with a body header.
-_OPAQUE_FAMILY, _BODY_HEADER_FAMILY = 0x14, 0x17
+#: A family with no body model at all, and one whose body begins with a body
+#: header. Every real family now has one or the other, so the unmodelled case
+#: needs a family that is not real silicon.
+_OPAQUE_FAMILY, _BODY_HEADER_FAMILY = 0x99, 0x17
 #: The families whose body opens with match registers, and one of them.
 _MATCH_FAMILIES = frozenset({0x0F, 0x10, 0x11, 0x12})
 _MATCH_FAMILY = 0x10
+#: The families whose body opens with a frame, and one of them.
+_FRAME_FAMILIES = frozenset({0x14, 0x15})
+_FRAME_FAMILY = 0x14
 
 
 def test_keeps_every_byte():
@@ -282,12 +289,12 @@ def test_registry_picks_the_model_by_family():
     assert isinstance(body_data_from_bytes(_OPAQUE_FAMILY, False, raw), PlaintextBodyData)
 
 
-@pytest.mark.parametrize("family", [0x0F, 0x10, 0x11, 0x12])
-def test_registry_models_the_match_register_families(family):
+@pytest.mark.parametrize("family", [0x0F, 0x10, 0x11, 0x12, 0x14, 0x15])
+def test_registry_models_the_families_with_a_body_layout(family):
     assert is_modelled(family)
 
 
-@pytest.mark.parametrize("family", [0x14, 0x15, 0x16, 0x17, 0x19, 0x1A, 0x99])
+@pytest.mark.parametrize("family", [0x16, 0x17, 0x19, 0x1A, 0x99])
 def test_registry_leaves_every_other_family_unmodelled(family):
     assert not is_modelled(family)
 
@@ -318,7 +325,6 @@ def test_only_the_modelled_families_decode_match_registers(patch_file: Path):
         pytest.skip("family has a body model of its own")
     if patch.body.is_encrypted:
         pytest.skip("encrypted bodies are opaque")
-    assert isinstance(patch.body.body_data, PlaintextBodyData)
     assert not hasattr(patch.body.body_data, "match_registers")
 
 
@@ -480,3 +486,77 @@ def test_the_whole_file_is_accounted_for(patch_file: Path):
     assert (len(raw) == patch.header.size
             + body_data.match_registers.size
             + patch.header.data.op_triad_count * BodyDataFam0fto12.OP_TRIAD_SIZE)
+
+
+# -- the frame families 0x14 and 0x15 open their body with --
+
+def _frame(patch_level: int, tag: bytes = b"12345678", reserved: int = 0) -> bytes:
+    """A body frame followed by some microcode."""
+    return tag + struct.pack("<II", reserved, patch_level) + b"microcode"
+
+
+def test_frame_is_split_off():
+    raw = _frame(0x05000001)
+    body = Body.from_bytes(raw, _FRAME_FAMILY)
+    assert isinstance(body.body_data, BodyDataFam14to15)
+    assert body.body_data.unknown0 == b"12345678" + struct.pack("<I", 0)
+    assert body.body_data.patch_level.value == 0x05000001
+    assert body.body_data.unknown1 == b"microcode"
+    assert body.to_bytes() == raw
+
+
+def test_frame_edit_persists():
+    body = Body.from_bytes(_frame(0x05000001), _FRAME_FAMILY)
+    body.body_data.patch_level.value = 0x05000002
+    reparsed = Body.from_bytes(body.to_bytes(), _FRAME_FAMILY)
+    assert reparsed.body_data.patch_level.value == 0x05000002
+
+
+def test_a_body_too_short_for_the_frame_is_refused():
+    with pytest.raises(ValueError):
+        Body.from_bytes(bytes(BodyDataFam14to15.FRAME_SIZE - 1), _FRAME_FAMILY)
+
+
+def test_a_body_that_exactly_fits_the_frame_is_decoded():
+    raw = b"12345678" + struct.pack("<II", 0, 0x05000001)
+    body = Body.from_bytes(raw, _FRAME_FAMILY)
+    assert body.body_data.unknown1 == b""
+    assert body.to_bytes() == raw
+
+
+def test_frame_is_readable_only_when_both_halves_hold():
+    level = PatchLevel(value=0x05000001)
+    readable = BodyDataFam14to15.frame_is_readable
+    assert readable(_frame(0x05000001), level)
+    # a non-zero reserved word, as ciphertext would give
+    assert not readable(_frame(0x05000001, reserved=1), level)
+    # a mirror that names a different patch
+    assert not readable(_frame(0x05000002), level)
+    # too short to hold a frame at all
+    assert not readable(b"short", level)
+
+
+# -- corpus-backed --
+
+def test_the_frame_families_decode_their_frame(patch_file: Path):
+    """The mirror is the anchor: it equals the header's patch level, 9/9."""
+    patch = Patch.from_bytes(patch_file.read_bytes())
+    body_data = patch.body.body_data
+    if not isinstance(body_data, BodyDataFam14to15):
+        pytest.skip("family has no body frame, or its body is encrypted")
+    assert body_data.patch_level.value == patch.header.patch_level.value
+
+
+def test_the_frame_agrees_with_the_encrypted_flag(patch_file: Path):
+    """
+    The cross-check the frame exists to provide: it sits inside the encrypted
+    region, so it decodes exactly when the header says the body is plaintext.
+    Two independent signals, and they must never disagree.
+    """
+    patch = Patch.from_bytes(patch_file.read_bytes())
+    declared = patch.header.data.is_encrypted
+    if declared is None:
+        pytest.skip("this format carries no encrypted flag in its header")
+    readable = BodyDataFam14to15.frame_is_readable(
+        patch.body.to_bytes(), patch.header.patch_level)
+    assert readable is not declared

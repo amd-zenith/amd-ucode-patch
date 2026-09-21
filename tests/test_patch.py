@@ -15,25 +15,24 @@ from amd_ucode_patch.structures.header_data_default import HeaderDataDefault
 
 
 def _core(loader_id: int) -> bytes:
-    """A 32-byte core in the given format, with a distinct byte in every slot."""
+    """
+    A 32-byte core in the given format, with a distinct byte in every slot.
+
+    Patch level family 0x99 (extended family 0x8a): a family with neither a
+    header-data model nor a body model nor a signature slot, so a minimal core
+    parses with no trailing block and the body stays whatever it is handed.
+    Every real family now constrains one of the three.
+    """
     core = bytearray(range(Header.CORE_SIZE))
     struct.pack_into("<H", core, 8, loader_id)
-    # patch level family 0x14 (Bobcat): an opaque body, no signature slot, so a
-    # minimal core needs no trailing block to parse.
-    struct.pack_into("<I", core, 4, 0x05000000)
-    return bytes(core)
-
-
-def _unmodelled_core(loader_id: int) -> bytes:
-    """A 32-byte core whose family has neither a header-data model nor a
-    signature slot: extended family 0x8a, i.e. family 0x99."""
-    core = bytearray(_core(loader_id))
     struct.pack_into("<I", core, 4, 0x8A000000)
     return bytes(core)
 
 
-# A minimal well-formed buffer: a 32-byte core in an opaque format (no signature
-# block is carved) plus some trailing body bytes.
+_unmodelled_core = _core
+
+# A minimal well-formed buffer: a 32-byte core in an unmodelled format (no
+# signature block is carved) plus some trailing body bytes.
 _SAMPLE = _core(0x8000) + b"body-bytes"
 
 
