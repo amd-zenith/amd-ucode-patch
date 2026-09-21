@@ -61,4 +61,5 @@ _BY_FAMILY: dict[int, OpGroupGeometry] = {
     0x12: _TRIAD,
     0x17: _QUAD,
     0x19: _QUAD,
+    0x1A: _QUAD,
 }
