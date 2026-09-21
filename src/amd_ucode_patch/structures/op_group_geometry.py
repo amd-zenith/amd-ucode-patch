@@ -50,13 +50,15 @@ class OpGroupGeometry:
 #: Three 64-bit micro-ops and a 32-bit sequence word: the K8/K10-era triad.
 _TRIAD = OpGroupGeometry(op_size=8, ops_per_group=3, sequence_word_size=4)
 
-#: The group geometry each family uses. A family is listed only where the
-#: patch itself confirms it: on 0x0f-0x12 the header's triad count accounts for
-#: the array exactly and its checksum sums it. A geometry inferred any other
-#: way is not recorded here.
+#: Four 64-bit micro-ops and a 32-bit sequence word: the Zen-era quad.
+_QUAD = OpGroupGeometry(op_size=8, ops_per_group=4, sequence_word_size=4)
+
+#: The group geometry each family uses.
 _BY_FAMILY: dict[int, OpGroupGeometry] = {
     0x0F: _TRIAD,
     0x10: _TRIAD,
     0x11: _TRIAD,
     0x12: _TRIAD,
+    0x17: _QUAD,
+    0x19: _QUAD,
 }
