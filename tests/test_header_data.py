@@ -26,6 +26,9 @@ from amd_ucode_patch.structures.header_data_fam0fto12 import (
 from amd_ucode_patch.structures.header_data_fam14to15 import (
     HeaderDataFam14to15,
 )
+from amd_ucode_patch.structures.header_data_fam19to1a import (
+    HeaderDataFam19to1a,
+)
 from amd_ucode_patch.structures.header_data_registry import (
     header_data_class,
     is_modelled,
@@ -74,6 +77,14 @@ def _patch_level_for_family(family: int) -> PatchLevel:
     return PatchLevel(value=(family - 0xF) << 24)
 
 
+@pytest.mark.parametrize("family", [0x19, 0x1A])
+def test_registry_resolves_the_zen3_zen5_families(family):
+    """0x19/0x1a declare a patch size and a required patch level."""
+    level = _patch_level_for_family(family)
+    assert is_modelled(level)
+    assert header_data_class(level) is HeaderDataFam19to1a
+
+
 @pytest.mark.parametrize("family", [0x14, 0x15])
 def test_registry_resolves_the_bobcat_bulldozer_families(family):
     """0x14/0x15 have a model of their own, but not the triad one."""
@@ -90,7 +101,7 @@ def test_registry_resolves_the_triad_families(family):
     assert header_data_class(level) is HeaderDataFam0fto12
 
 
-@pytest.mark.parametrize("family", [0x16, 0x17, 0x19, 0x1A, 0x99])
+@pytest.mark.parametrize("family", [0x16, 0x17, 0x99])
 def test_registry_falls_back_to_the_default(family):
     """
     A family with no model of its own is neither refused nor guessed at: the
@@ -120,10 +131,10 @@ def test_default_rejects_short_buffer():
         HeaderDataDefault.from_bytes(bytes(HeaderData.SIZE - 1))
 
 
-def test_default_decodes_only_the_cpuid():
+def test_default_decodes_what_its_own_evidence_supports():
     """
-    Offsets 10-23 are where the formats disagree, so the default model leaves
-    them verbatim and decodes offset 24 alone.
+    Offsets 10-15 mean different things per family and are left verbatim; the
+    fields the AMD header carries identically throughout are decoded.
     """
     data = HeaderDataDefault.from_bytes(_SAMPLE)
     assert data.unknown0 == _SAMPLE[0:14]
@@ -153,7 +164,7 @@ def test_default_roundtrips_every_corpus_file(patch_file: Path):
 def _region(**overrides) -> bytes:
     """A 22-byte region with a distinct value in every field."""
     fields = dict(op_triad_count=0x20, init_flag=0x01, op_triad_checksum=0xDEADBEEF,
-                  unknown0=bytes(range(0x60, 0x68)),
+                  nb_dev_id=0x63626160, unknown0=bytes(range(0x64, 0x68)),
                   cpuid=AmdCpuId.from_ucode_signature(0x0050),
                   unknown1=bytes(range(0x70, 0x76)))
     return HeaderDataFam0fto12(**{**fields, **overrides}).to_bytes()
@@ -165,7 +176,8 @@ def test_every_field_lands_on_its_own_value():
     assert data.op_triad_count == 0x20
     assert data.init_flag == 0x01
     assert data.op_triad_checksum == 0xDEADBEEF
-    assert data.unknown0 == bytes(range(0x60, 0x68))
+    assert data.nb_dev_id == 0x63626160
+    assert data.unknown0 == bytes(range(0x64, 0x68))
     assert data.cpuid == AmdCpuId.from_ucode_signature(0x0050)
     assert data.unknown1 == bytes(range(0x70, 0x76))
 
@@ -174,7 +186,8 @@ def test_every_field_lands_on_its_own_value():
     ("op_triad_count", 0, "20"),
     ("init_flag", 1, "01"),
     ("op_triad_checksum", 2, "efbeadde"),
-    ("unknown0", 6, "6061626364656667"),
+    ("nb_dev_id", 6, "60616263"),
+    ("unknown0", 10, "64656667"),
     ("cpuid", 14, "5000"),
     ("unknown1", 16, "707172737475"),
 ])
@@ -186,7 +199,8 @@ def test_field_encoding_and_placement(field, offset, encoded):
 
 @pytest.mark.parametrize(("field", "value"), [
     ("op_triad_count", 0x10), ("init_flag", 0x00), ("op_triad_checksum", 0x12345678),
-    ("unknown0", bytes(8)), ("cpuid", AmdCpuId.from_ucode_signature(0x0210)), ("unknown1", bytes(6)),
+    ("nb_dev_id", 0x74501022), ("unknown0", bytes(4)), ("unknown1", bytes(6)),
+    ("cpuid", AmdCpuId.from_ucode_signature(0x0210)),
 ])
 def test_field_edit_persists(field, value):
     data = HeaderDataFam0fto12.from_bytes(_region())

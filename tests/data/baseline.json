@@ -1,5 +1,5 @@
 {
- "family0f_cpuid00000F00_rev02000008_date20070614_sha32ed738564d4.bin": {
+ "family0f_cpuid00000F00_rev02000008_date20070614_enc00_sha32ed738564d4.bin": {
   "date": "06142007",
   "loader_id": "8000",
   "patch_level": "02000008",
@@ -7,7 +7,7 @@
   "signed": false,
   "size": 512
  },
- "family0f_cpuid00000F01_rev0000001c_date20021031_sha22b1fd489acb.bin": {
+ "family0f_cpuid00000F01_rev0000001c_date20021031_enc00_sha22b1fd489acb.bin": {
   "date": "10312002",
   "loader_id": "8000",
   "patch_level": "0000001c",
@@ -15,7 +15,7 @@
   "signed": false,
   "size": 960
  },
- "family0f_cpuid00000F10_rev00000003_date20020325_sha33dac56eaf6b.bin": {
+ "family0f_cpuid00000F10_rev00000003_date20020325_enc00_sha33dac56eaf6b.bin": {
   "date": "03252002",
   "loader_id": "8000",
   "patch_level": "00000003",
@@ -23,7 +23,7 @@
   "signed": false,
   "size": 960
  },
- "family0f_cpuid00000F11_rev0000001a_date20021031_sha0124047bc2aa.bin": {
+ "family0f_cpuid00000F11_rev0000001a_date20021031_enc00_sha0124047bc2aa.bin": {
   "date": "10312002",
   "loader_id": "8000",
   "patch_level": "0000001a",
@@ -31,7 +31,7 @@
   "signed": false,
   "size": 960
  },
- "family0f_cpuid00000F11_rev0000001e_date20021211_sha9dea8388c1a5.bin": {
+ "family0f_cpuid00000F11_rev0000001e_date20021211_enc00_sha9dea8388c1a5.bin": {
   "date": "12112002",
   "loader_id": "8000",
   "patch_level": "0000001e",
@@ -39,7 +39,7 @@
   "signed": false,
   "size": 960
  },
- "family0f_cpuid00000F11_rev0000001f_date20030220_shad1efa5eb5bd0.bin": {
+ "family0f_cpuid00000F11_rev0000001f_date20030220_enc00_shad1efa5eb5bd0.bin": {
   "date": "02202003",
   "loader_id": "8000",
   "patch_level": "0000001f",
@@ -47,7 +47,7 @@
   "signed": false,
   "size": 960
  },
- "family0f_cpuid00000F48_rev00000046_date20040719_sha6b891aafe805.bin": {
+ "family0f_cpuid00000F48_rev00000046_date20040719_enc00_sha6b891aafe805.bin": {
   "date": "07192004",
   "loader_id": "8000",
   "patch_level": "00000046",
@@ -55,7 +55,7 @@
   "signed": false,
   "size": 960
  },
- "family0f_cpuid00000F4A_rev00000047_date20040719_sha2a8f6872ebfc.bin": {
+ "family0f_cpuid00000F4A_rev00000047_date20040719_enc00_sha2a8f6872ebfc.bin": {
   "date": "07192004",
   "loader_id": "8000",
   "patch_level": "00000047",
@@ -63,7 +63,7 @@
   "signed": false,
   "size": 960
  },
- "family0f_cpuid00000F50_rev00000022_date20021030_sha589a93cda53b.bin": {
+ "family0f_cpuid00000F50_rev00000022_date20021030_enc00_sha589a93cda53b.bin": {
   "date": "10302002",
   "loader_id": "8000",
   "patch_level": "00000022",
@@ -71,7 +71,7 @@
   "signed": false,
   "size": 960
  },
- "family0f_cpuid00000F50_rev00000024_date20021212_sha5b35424bc5ae.bin": {
+ "family0f_cpuid00000F50_rev00000024_date20021212_enc00_sha5b35424bc5ae.bin": {
   "date": "12122002",
   "loader_id": "8000",
   "patch_level": "00000024",
@@ -79,7 +79,7 @@
   "signed": false,
   "size": 960
  },
- "family0f_cpuid00000F51_rev00000025_date20030115_sha54e6561e8861.bin": {
+ "family0f_cpuid00000F51_rev00000025_date20030115_enc00_sha54e6561e8861.bin": {
   "date": "01152003",
   "loader_id": "8000",
   "patch_level": "00000025",
@@ -87,7 +87,7 @@
   "signed": false,
   "size": 960
  },
- "family0f_cpuid00010F50_rev00000041_date20040225_shad2b236e10d16.bin": {
+ "family0f_cpuid00010F50_rev00000041_date20040225_enc00_shad2b236e10d16.bin": {
   "date": "02252004",
   "loader_id": "8000",
   "patch_level": "00000041",
@@ -95,7 +95,7 @@
   "signed": false,
   "size": 960
  },
- "family0f_cpuid00020F10_rev0000004d_date20050428_shafe2b2e08d602.bin": {
+ "family0f_cpuid00020F10_rev0000004d_date20050428_enc00_shafe2b2e08d602.bin": {
   "date": "04282005",
   "loader_id": "8000",
   "patch_level": "0000004d",
@@ -103,7 +103,7 @@
   "signed": false,
   "size": 960
  },
- "family0f_cpuid00040F01_revc0012102_date20050916_shafc96f2f507d0.bin": {
+ "family0f_cpuid00040F01_revc0012102_date20050916_enc00_shafc96f2f507d0.bin": {
   "date": "09162005",
   "loader_id": "8000",
   "patch_level": "c0012102",
@@ -111,7 +111,7 @@
   "signed": false,
   "size": 512
  },
- "family0f_cpuid00040F0A_rev00000068_date20060920_sha8f14e541e766.bin": {
+ "family0f_cpuid00040F0A_rev00000068_date20060920_enc00_sha8f14e541e766.bin": {
   "date": "09202006",
   "loader_id": "8000",
   "patch_level": "00000068",
@@ -119,7 +119,7 @@
   "signed": false,
   "size": 512
  },
- "family0f_cpuid00040F13_rev0000007a_date20080508_shaaf1e6ea98f8a.bin": {
+ "family0f_cpuid00040F13_rev0000007a_date20080508_enc00_shaaf1e6ea98f8a.bin": {
   "date": "05082008",
   "loader_id": "8000",
   "patch_level": "0000007a",
@@ -127,7 +127,7 @@
   "signed": false,
   "size": 512
  },
- "family0f_cpuid00040F14_rev00000062_date20060127_sha722f9928a5ca.bin": {
+ "family0f_cpuid00040F14_rev00000062_date20060127_enc00_sha722f9928a5ca.bin": {
   "date": "01272006",
   "loader_id": "8000",
   "patch_level": "00000062",
@@ -135,7 +135,7 @@
   "signed": false,
   "size": 512
  },
- "family0f_cpuid00040F1B_rev0000006d_date20060920_sha12cea0d31175.bin": {
+ "family0f_cpuid00040F1B_rev0000006d_date20060920_enc00_sha12cea0d31175.bin": {
   "date": "09202006",
   "loader_id": "8000",
   "patch_level": "0000006d",
@@ -143,7 +143,7 @@
   "signed": false,
   "size": 512
  },
- "family0f_cpuid00040F33_rev0000007b_date20080514_sha80a7d8c2f33e.bin": {
+ "family0f_cpuid00040F33_rev0000007b_date20080514_enc00_sha80a7d8c2f33e.bin": {
   "date": "05142008",
   "loader_id": "8000",
   "patch_level": "0000007b",
@@ -151,7 +151,7 @@
   "signed": false,
   "size": 512
  },
- "family0f_cpuid00060F80_rev00000083_date20060929_sha7b636472dea7.bin": {
+ "family0f_cpuid00060F80_rev00000083_date20060929_enc00_sha7b636472dea7.bin": {
   "date": "09292006",
   "loader_id": "8000",
   "patch_level": "00000083",
@@ -159,7 +159,7 @@
   "signed": false,
   "size": 512
  },
- "family0f_cpuid000C0F1B_rev0000006e_date20060921_sha789aedebceba.bin": {
+ "family0f_cpuid000C0F1B_rev0000006e_date20060921_enc00_sha789aedebceba.bin": {
   "date": "09212006",
   "loader_id": "8000",
   "patch_level": "0000006e",
@@ -167,7 +167,7 @@
   "signed": false,
   "size": 512
  },
- "family0f_cpuid000F0F00_rev00000005_date20020627_sha60423005ba0c.bin": {
+ "family0f_cpuid000F0F00_rev00000005_date20020627_enc00_sha60423005ba0c.bin": {
   "date": "06272002",
   "loader_id": "8000",
   "patch_level": "00000005",
@@ -175,7 +175,7 @@
   "signed": false,
   "size": 960
  },
- "family0f_cpuid000F0F01_rev00000015_date20020627_sha04dcf07be38d.bin": {
+ "family0f_cpuid000F0F01_rev00000015_date20020627_enc00_sha04dcf07be38d.bin": {
   "date": "06272002",
   "loader_id": "8000",
   "patch_level": "00000015",
@@ -183,7 +183,7 @@
   "signed": false,
   "size": 960
  },
- "family10_cpuid00100F00_rev01000020_date20070326_shadf2f0f2523a9.bin": {
+ "family10_cpuid00100F00_rev01000020_date20070326_enc00_shadf2f0f2523a9.bin": {
   "date": "03262007",
   "loader_id": "8000",
   "patch_level": "01000020",
@@ -191,7 +191,7 @@
   "signed": false,
   "size": 960
  },
- "family10_cpuid00100F20_rev01000084_date20080501_shaae229b9fd34b.bin": {
+ "family10_cpuid00100F20_rev01000084_date20080501_enc00_shaae229b9fd34b.bin": {
   "date": "05012008",
   "loader_id": "8000",
   "patch_level": "01000084",
@@ -199,7 +199,7 @@
   "signed": false,
   "size": 960
  },
- "family10_cpuid00100F20_rev010000ca_date20100331_sha3714287eaac2.bin": {
+ "family10_cpuid00100F20_rev010000ca_date20100331_enc00_sha3714287eaac2.bin": {
   "date": "03312010",
   "loader_id": "8000",
   "patch_level": "010000ca",
@@ -207,7 +207,7 @@
   "signed": false,
   "size": 960
  },
- "family10_cpuid00100F22_rev01000083_date20080430_shab6388a11e5b9.bin": {
+ "family10_cpuid00100F22_rev01000083_date20080430_enc00_shab6388a11e5b9.bin": {
   "date": "04302008",
   "loader_id": "8000",
   "patch_level": "01000083",
@@ -215,7 +215,7 @@
   "signed": false,
   "size": 960
  },
- "family10_cpuid00100F22_rev010000c9_date20100331_sha5d993063ac4b.bin": {
+ "family10_cpuid00100F22_rev010000c9_date20100331_enc00_sha5d993063ac4b.bin": {
   "date": "03312010",
   "loader_id": "8000",
   "patch_level": "010000c9",
@@ -223,7 +223,7 @@
   "signed": false,
   "size": 960
  },
- "family10_cpuid00100F40_rev01000085_date20080501_sha1e15e155fd42.bin": {
+ "family10_cpuid00100F40_rev01000085_date20080501_enc00_sha1e15e155fd42.bin": {
   "date": "05012008",
   "loader_id": "8000",
   "patch_level": "01000085",
@@ -231,7 +231,7 @@
   "signed": false,
   "size": 960
  },
- "family10_cpuid00100F41_rev010000db_date20111024_shaaa7448013160.bin": {
+ "family10_cpuid00100F41_rev010000db_date20111024_enc00_shaaa7448013160.bin": {
   "date": "10242011",
   "loader_id": "8000",
   "patch_level": "010000db",
@@ -239,7 +239,7 @@
   "signed": false,
   "size": 960
  },
- "family10_cpuid00100F42_rev01000092_date20081021_shada8c982dde37.bin": {
+ "family10_cpuid00100F42_rev01000092_date20081021_enc00_shada8c982dde37.bin": {
   "date": "10212008",
   "loader_id": "8000",
   "patch_level": "01000092",
@@ -247,7 +247,7 @@
   "signed": false,
   "size": 960
  },
- "family10_cpuid00100F43_rev010000c8_date20100311_shabdabdcb44248.bin": {
+ "family10_cpuid00100F43_rev010000c8_date20100311_enc00_shabdabdcb44248.bin": {
   "date": "03112010",
   "loader_id": "8000",
   "patch_level": "010000c8",
@@ -255,7 +255,7 @@
   "signed": false,
   "size": 960
  },
- "family10_cpuid00100F62_rev010000c7_date20100311_sha48e4f8323b40.bin": {
+ "family10_cpuid00100F62_rev010000c7_date20100311_enc00_sha48e4f8323b40.bin": {
   "date": "03112010",
   "loader_id": "8000",
   "patch_level": "010000c7",
@@ -263,7 +263,7 @@
   "signed": false,
   "size": 960
  },
- "family10_cpuid00100F80_rev010000da_date20111024_sha2b3229db7b52.bin": {
+ "family10_cpuid00100F80_rev010000da_date20111024_enc00_sha2b3229db7b52.bin": {
   "date": "10242011",
   "loader_id": "8000",
   "patch_level": "010000da",
@@ -271,7 +271,7 @@
   "signed": false,
   "size": 960
  },
- "family10_cpuid00100F81_rev010000d9_date20111012_sha9754211afb7f.bin": {
+ "family10_cpuid00100F81_rev010000d9_date20111012_enc00_sha9754211afb7f.bin": {
   "date": "10122011",
   "loader_id": "8000",
   "patch_level": "010000d9",
@@ -279,7 +279,7 @@
   "signed": false,
   "size": 960
  },
- "family10_cpuid00100FA0_rev010000dc_date20111024_sha576ce28c7acc.bin": {
+ "family10_cpuid00100FA0_rev010000dc_date20111024_enc00_sha576ce28c7acc.bin": {
   "date": "10242011",
   "loader_id": "8000",
   "patch_level": "010000dc",
@@ -287,15 +287,7 @@
   "signed": false,
   "size": 960
  },
- "family10_cpuid00120F00_rev03000002_date20100324_shad925d949c862.bin": {
-  "date": "03242010",
-  "loader_id": "8003",
-  "patch_level": "03000002",
-  "sha256_12": "d925d949c862",
-  "signed": false,
-  "size": 960
- },
- "family11_cpuid00200F30_rev02000018_date20070921_sha53e22f2f5c00.bin": {
+ "family11_cpuid00200F30_rev02000018_date20070921_enc00_sha53e22f2f5c00.bin": {
   "date": "09212007",
   "loader_id": "8000",
   "patch_level": "02000018",
@@ -303,7 +295,7 @@
   "signed": false,
   "size": 512
  },
- "family11_cpuid00200F31_rev02000032_date20080306_sha470d37c7dbed.bin": {
+ "family11_cpuid00200F31_rev02000032_date20080306_enc00_sha470d37c7dbed.bin": {
   "date": "03062008",
   "loader_id": "8000",
   "patch_level": "02000032",
@@ -311,7 +303,7 @@
   "signed": false,
   "size": 512
  },
- "family11_cpuid00200F31_rev02000057_date20080502_shad48ae26dac1a.bin": {
+ "family11_cpuid00200F31_rev02000057_date20080502_enc00_shad48ae26dac1a.bin": {
   "date": "05022008",
   "loader_id": "8000",
   "patch_level": "02000057",
@@ -319,7 +311,7 @@
   "signed": false,
   "size": 512
  },
- "family11_cpuid00200F32_rev02000034_date20080307_sha2cd0ff069f86.bin": {
+ "family11_cpuid00200F32_rev02000034_date20080307_enc00_sha2cd0ff069f86.bin": {
   "date": "03072008",
   "loader_id": "8000",
   "patch_level": "02000034",
@@ -327,7 +319,15 @@
   "signed": false,
   "size": 512
  },
- "family12_cpuid00300F01_rev0300000e_date20101004_shafc99e94d62ee.bin": {
+ "family12_cpuid00120F00_rev03000002_date20100324_enc00_shad925d949c862.bin": {
+  "date": "03242010",
+  "loader_id": "8003",
+  "patch_level": "03000002",
+  "sha256_12": "d925d949c862",
+  "signed": false,
+  "size": 960
+ },
+ "family12_cpuid00300F01_rev0300000e_date20101004_enc00_shafc99e94d62ee.bin": {
   "date": "10042010",
   "loader_id": "8003",
   "patch_level": "0300000e",
@@ -335,7 +335,7 @@
   "signed": false,
   "size": 960
  },
- "family12_cpuid00300F10_rev03000027_date20111309_sha72a4557d3ea1.bin": {
+ "family12_cpuid00300F10_rev03000027_date20111309_enc00_sha72a4557d3ea1.bin": {
   "date": "13092011",
   "loader_id": "8003",
   "patch_level": "03000027",
@@ -343,39 +343,7 @@
   "signed": false,
   "size": 960
  },
- "family14_cpuid00500F00_rev0500000b_date20100601_shaf1f626812158.bin": {
-  "date": "06012010",
-  "loader_id": "8001",
-  "patch_level": "0500000b",
-  "sha256_12": "f1f626812158",
-  "signed": false,
-  "size": 1568
- },
- "family14_cpuid00500F01_rev0500001a_date20100908_sha66b825dc6537.bin": {
-  "date": "09082010",
-  "loader_id": "8001",
-  "patch_level": "0500001a",
-  "sha256_12": "66b825dc6537",
-  "signed": false,
-  "size": 1568
- },
- "family14_cpuid00500F10_rev05000029_date20130121_sha6c7cd439c5f7.bin": {
-  "date": "01212013",
-  "loader_id": "8001",
-  "patch_level": "05000029",
-  "sha256_12": "6c7cd439c5f7",
-  "signed": false,
-  "size": 1568
- },
- "family14_cpuid00500F20_rev05000119_date20130118_sha509c226643c3.bin": {
-  "date": "01182013",
-  "loader_id": "8001",
-  "patch_level": "05000119",
-  "sha256_12": "509c226643c3",
-  "signed": false,
-  "size": 1568
- },
- "family14_cpuid00580F00_rev0500000b_date20100601_sha7a267051c531.bin": {
+ "family14_cpuid00500F00_rev0500000b_date20100601_enc00_sha7a267051c531.bin": {
   "date": "06012010",
   "loader_id": "8001",
   "patch_level": "0500000b",
@@ -383,7 +351,15 @@
   "signed": false,
   "size": 1383
  },
- "family14_cpuid00580F01_rev0500001a_date20100908_shaeef00db9e6f4.bin": {
+ "family14_cpuid00500F00_rev0500000b_date20100601_enc01_shaf1f626812158.bin": {
+  "date": "06012010",
+  "loader_id": "8001",
+  "patch_level": "0500000b",
+  "sha256_12": "f1f626812158",
+  "signed": false,
+  "size": 1568
+ },
+ "family14_cpuid00500F01_rev0500001a_date20100908_enc00_shaeef00db9e6f4.bin": {
   "date": "09082010",
   "loader_id": "8001",
   "patch_level": "0500001a",
@@ -391,7 +367,15 @@
   "signed": false,
   "size": 1383
  },
- "family14_cpuid00580F10_rev05000028_date20101124_sha23b4f3bc88ef.bin": {
+ "family14_cpuid00500F01_rev0500001a_date20100908_enc01_sha66b825dc6537.bin": {
+  "date": "09082010",
+  "loader_id": "8001",
+  "patch_level": "0500001a",
+  "sha256_12": "66b825dc6537",
+  "signed": false,
+  "size": 1568
+ },
+ "family14_cpuid00500F10_rev05000028_date20101124_enc00_sha23b4f3bc88ef.bin": {
   "date": "11242010",
   "loader_id": "8001",
   "patch_level": "05000028",
@@ -399,7 +383,15 @@
   "signed": false,
   "size": 1383
  },
- "family14_cpuid00580F20_rev05000101_date20110406_sha6085baf25dca.bin": {
+ "family14_cpuid00500F10_rev05000029_date20130121_enc01_sha6c7cd439c5f7.bin": {
+  "date": "01212013",
+  "loader_id": "8001",
+  "patch_level": "05000029",
+  "sha256_12": "6c7cd439c5f7",
+  "signed": false,
+  "size": 1568
+ },
+ "family14_cpuid00500F20_rev05000101_date20110406_enc00_sha6085baf25dca.bin": {
   "date": "04062011",
   "loader_id": "8001",
   "patch_level": "05000101",
@@ -407,7 +399,7 @@
   "signed": false,
   "size": 1383
  },
- "family14_cpuid00580F20_rev05000103_date20110526_sha1437baefda6b.bin": {
+ "family14_cpuid00500F20_rev05000103_date20110526_enc00_sha1437baefda6b.bin": {
   "date": "05262011",
   "loader_id": "8001",
   "patch_level": "05000103",
@@ -415,183 +407,15 @@
   "signed": false,
   "size": 1383
  },
- "family15_cpuid00600F00_rev06000017_date20101029_sha4c7a17ec2200.bin": {
-  "date": "10292010",
-  "loader_id": "8002",
-  "patch_level": "06000017",
-  "sha256_12": "4c7a17ec2200",
+ "family14_cpuid00500F20_rev05000119_date20130118_enc01_sha509c226643c3.bin": {
+  "date": "01182013",
+  "loader_id": "8001",
+  "patch_level": "05000119",
+  "sha256_12": "509c226643c3",
   "signed": false,
-  "size": 2592
+  "size": 1568
  },
- "family15_cpuid00600F01_rev0600011f_date20110227_sha2711642c7e66.bin": {
-  "date": "02272011",
-  "loader_id": "8002",
-  "patch_level": "0600011f",
-  "sha256_12": "2711642c7e66",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00600F10_rev06000425_date20110408_sha36a72a7e9e8e.bin": {
-  "date": "04082011",
-  "loader_id": "8002",
-  "patch_level": "06000425",
-  "sha256_12": "36a72a7e9e8e",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00600F11_rev0600050d_date20110627_shadb856f8c4020.bin": {
-  "date": "06272011",
-  "loader_id": "8002",
-  "patch_level": "0600050d",
-  "sha256_12": "db856f8c4020",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00600F12_rev0600063d_date20130306_shaab166f04d923.bin": {
-  "date": "03062013",
-  "loader_id": "8002",
-  "patch_level": "0600063d",
-  "sha256_12": "ab166f04d923",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00600F12_rev0600063e_date20180207_sha73ee79cafe7d.bin": {
-  "date": "02072018",
-  "loader_id": "8002",
-  "patch_level": "0600063e",
-  "sha256_12": "73ee79cafe7d",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00600F20_rev06000822_date20130103_shac5bf4998aa52.bin": {
-  "date": "01032013",
-  "loader_id": "8002",
-  "patch_level": "06000822",
-  "sha256_12": "c5bf4998aa52",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00600F20_rev06000832_date20140723_sha447aab0067a8.bin": {
-  "date": "07232014",
-  "loader_id": "8002",
-  "patch_level": "06000832",
-  "sha256_12": "447aab0067a8",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00600F20_rev0600084f_date20160125_shadf9196751a37.bin": {
-  "date": "01252016",
-  "loader_id": "8002",
-  "patch_level": "0600084f",
-  "sha256_12": "df9196751a37",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00600F20_rev06000852_date20180206_shaf01529a1376e.bin": {
-  "date": "02062018",
-  "loader_id": "8002",
-  "patch_level": "06000852",
-  "sha256_12": "f01529a1376e",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00610F00_rev0600100e_date20111102_shacb4531e5a28e.bin": {
-  "date": "11022011",
-  "loader_id": "8002",
-  "patch_level": "0600100e",
-  "sha256_12": "cb4531e5a28e",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00610F01_rev06001119_date20120713_shaa7c08d1f49b2.bin": {
-  "date": "07132012",
-  "loader_id": "8002",
-  "patch_level": "06001119",
-  "sha256_12": "a7c08d1f49b2",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00610F01_rev0600111f_date20180305_sha5932520d4268.bin": {
-  "date": "03052018",
-  "loader_id": "8002",
-  "patch_level": "0600111f",
-  "sha256_12": "5932520d4268",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00630F00_rev0600301c_date20130817_sha6679079c22cd.bin": {
-  "date": "08172013",
-  "loader_id": "8002",
-  "patch_level": "0600301c",
-  "sha256_12": "6679079c22cd",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00630F01_rev06003106_date20140418_shadae35caee637.bin": {
-  "date": "04182014",
-  "loader_id": "8002",
-  "patch_level": "06003106",
-  "sha256_12": "dae35caee637",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00630F01_rev06003109_date20180227_shaa79637128cfb.bin": {
-  "date": "02272018",
-  "loader_id": "8002",
-  "patch_level": "06003109",
-  "sha256_12": "a79637128cfb",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00660F00_rev06006012_date20141014_sha040e76ccbcb0.bin": {
-  "date": "10142014",
-  "loader_id": "8002",
-  "patch_level": "06006012",
-  "sha256_12": "040e76ccbcb0",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00660F00_rev06006108_date20150302_sha31ac3d2536b1.bin": {
-  "date": "03022015",
-  "loader_id": "8002",
-  "patch_level": "06006108",
-  "sha256_12": "31ac3d2536b1",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00660F01_rev06006118_date20160218_sha109aef0dc7e3.bin": {
-  "date": "02182016",
-  "loader_id": "8002",
-  "patch_level": "06006118",
-  "sha256_12": "109aef0dc7e3",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00660F01_rev0600611a_date20180126_shab5f4867321e2.bin": {
-  "date": "01262018",
-  "loader_id": "8002",
-  "patch_level": "0600611a",
-  "sha256_12": "b5f4867321e2",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00670F00_rev06006704_date20151210_sha9647417d3677.bin": {
-  "date": "12102015",
-  "loader_id": "8002",
-  "patch_level": "06006704",
-  "sha256_12": "9647417d3677",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00670F00_rev06006705_date20180220_sha1177f1b3da7e.bin": {
-  "date": "02202018",
-  "loader_id": "8002",
-  "patch_level": "06006705",
-  "sha256_12": "1177f1b3da7e",
-  "signed": false,
-  "size": 2592
- },
- "family15_cpuid00680F00_rev06000017_date20101029_sha6d7b3a7cb763.bin": {
+ "family15_cpuid00600F00_rev06000017_date20101029_enc00_sha6d7b3a7cb763.bin": {
   "date": "10292010",
   "loader_id": "8002",
   "patch_level": "06000017",
@@ -599,7 +423,15 @@
   "signed": false,
   "size": 2432
  },
- "family15_cpuid00680F01_rev0600011f_date20110227_shad83ab8068462.bin": {
+ "family15_cpuid00600F00_rev06000017_date20101029_enc01_sha4c7a17ec2200.bin": {
+  "date": "10292010",
+  "loader_id": "8002",
+  "patch_level": "06000017",
+  "sha256_12": "4c7a17ec2200",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00600F01_rev0600011f_date20110227_enc00_shad83ab8068462.bin": {
   "date": "02272011",
   "loader_id": "8002",
   "patch_level": "0600011f",
@@ -607,7 +439,15 @@
   "signed": false,
   "size": 2432
  },
- "family15_cpuid00680F10_rev06000410_date20110314_sha79ca93d25e41.bin": {
+ "family15_cpuid00600F01_rev0600011f_date20110227_enc01_sha2711642c7e66.bin": {
+  "date": "02272011",
+  "loader_id": "8002",
+  "patch_level": "0600011f",
+  "sha256_12": "2711642c7e66",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00600F10_rev06000410_date20110314_enc00_sha79ca93d25e41.bin": {
   "date": "03142011",
   "loader_id": "8002",
   "patch_level": "06000410",
@@ -615,7 +455,71 @@
   "signed": false,
   "size": 2432
  },
- "family15_cpuid00690F00_rev06001009_date20110613_sha7ed47c26b229.bin": {
+ "family15_cpuid00600F10_rev06000425_date20110408_enc01_sha36a72a7e9e8e.bin": {
+  "date": "04082011",
+  "loader_id": "8002",
+  "patch_level": "06000425",
+  "sha256_12": "36a72a7e9e8e",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00600F11_rev0600050d_date20110627_enc01_shadb856f8c4020.bin": {
+  "date": "06272011",
+  "loader_id": "8002",
+  "patch_level": "0600050d",
+  "sha256_12": "db856f8c4020",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00600F12_rev0600063d_date20130306_enc01_shaab166f04d923.bin": {
+  "date": "03062013",
+  "loader_id": "8002",
+  "patch_level": "0600063d",
+  "sha256_12": "ab166f04d923",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00600F12_rev0600063e_date20180207_enc01_sha73ee79cafe7d.bin": {
+  "date": "02072018",
+  "loader_id": "8002",
+  "patch_level": "0600063e",
+  "sha256_12": "73ee79cafe7d",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00600F20_rev06000822_date20130103_enc01_shac5bf4998aa52.bin": {
+  "date": "01032013",
+  "loader_id": "8002",
+  "patch_level": "06000822",
+  "sha256_12": "c5bf4998aa52",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00600F20_rev06000832_date20140723_enc01_sha447aab0067a8.bin": {
+  "date": "07232014",
+  "loader_id": "8002",
+  "patch_level": "06000832",
+  "sha256_12": "447aab0067a8",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00600F20_rev0600084f_date20160125_enc01_shadf9196751a37.bin": {
+  "date": "01252016",
+  "loader_id": "8002",
+  "patch_level": "0600084f",
+  "sha256_12": "df9196751a37",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00600F20_rev06000852_date20180206_enc01_shaf01529a1376e.bin": {
+  "date": "02062018",
+  "loader_id": "8002",
+  "patch_level": "06000852",
+  "sha256_12": "f01529a1376e",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00610F00_rev06001009_date20110613_enc00_sha7ed47c26b229.bin": {
   "date": "06132011",
   "loader_id": "8002",
   "patch_level": "06001009",
@@ -623,15 +527,103 @@
   "signed": false,
   "size": 2432
  },
- "family16_cpuid00700F00_rev0700002a_date20121218_enc00_sha11619ebaf3ba.bin": {
-  "date": "12182012",
-  "loader_id": "8003",
-  "patch_level": "0700002a",
-  "sha256_12": "11619ebaf3ba",
+ "family15_cpuid00610F00_rev0600100e_date20111102_enc01_shacb4531e5a28e.bin": {
+  "date": "11022011",
+  "loader_id": "8002",
+  "patch_level": "0600100e",
+  "sha256_12": "cb4531e5a28e",
   "signed": false,
-  "size": 3424
+  "size": 2592
  },
- "family16_cpuid00700F00_rev0700002a_date20121218_sha11619ebaf3ba.bin": {
+ "family15_cpuid00610F01_rev06001119_date20120713_enc01_shaa7c08d1f49b2.bin": {
+  "date": "07132012",
+  "loader_id": "8002",
+  "patch_level": "06001119",
+  "sha256_12": "a7c08d1f49b2",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00610F01_rev0600111f_date20180305_enc01_sha5932520d4268.bin": {
+  "date": "03052018",
+  "loader_id": "8002",
+  "patch_level": "0600111f",
+  "sha256_12": "5932520d4268",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00630F00_rev0600301c_date20130817_enc01_sha6679079c22cd.bin": {
+  "date": "08172013",
+  "loader_id": "8002",
+  "patch_level": "0600301c",
+  "sha256_12": "6679079c22cd",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00630F01_rev06003106_date20140418_enc01_shadae35caee637.bin": {
+  "date": "04182014",
+  "loader_id": "8002",
+  "patch_level": "06003106",
+  "sha256_12": "dae35caee637",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00630F01_rev06003109_date20180227_enc01_shaa79637128cfb.bin": {
+  "date": "02272018",
+  "loader_id": "8002",
+  "patch_level": "06003109",
+  "sha256_12": "a79637128cfb",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00660F00_rev06006012_date20141014_enc01_sha040e76ccbcb0.bin": {
+  "date": "10142014",
+  "loader_id": "8002",
+  "patch_level": "06006012",
+  "sha256_12": "040e76ccbcb0",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00660F00_rev06006108_date20150302_enc01_sha31ac3d2536b1.bin": {
+  "date": "03022015",
+  "loader_id": "8002",
+  "patch_level": "06006108",
+  "sha256_12": "31ac3d2536b1",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00660F01_rev06006118_date20160218_enc01_sha109aef0dc7e3.bin": {
+  "date": "02182016",
+  "loader_id": "8002",
+  "patch_level": "06006118",
+  "sha256_12": "109aef0dc7e3",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00660F01_rev0600611a_date20180126_enc01_shab5f4867321e2.bin": {
+  "date": "01262018",
+  "loader_id": "8002",
+  "patch_level": "0600611a",
+  "sha256_12": "b5f4867321e2",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00670F00_rev06006704_date20151210_enc01_sha9647417d3677.bin": {
+  "date": "12102015",
+  "loader_id": "8002",
+  "patch_level": "06006704",
+  "sha256_12": "9647417d3677",
+  "signed": false,
+  "size": 2592
+ },
+ "family15_cpuid00670F00_rev06006705_date20180220_enc01_sha1177f1b3da7e.bin": {
+  "date": "02202018",
+  "loader_id": "8002",
+  "patch_level": "06006705",
+  "sha256_12": "1177f1b3da7e",
+  "signed": false,
+  "size": 2592
+ },
+ "family16_cpuid00700F00_rev0700002a_date20121218_enc00_sha11619ebaf3ba.bin": {
   "date": "12182012",
   "loader_id": "8003",
   "patch_level": "0700002a",
@@ -655,31 +647,7 @@
   "signed": false,
   "size": 3424
  },
- "family16_cpuid00700F01_rev0700010f_date20140219_sha1a41318dc9b8.bin": {
-  "date": "02192014",
-  "loader_id": "8003",
-  "patch_level": "0700010f",
-  "sha256_12": "1a41318dc9b8",
-  "signed": false,
-  "size": 3458
- },
- "family16_cpuid00700F01_rev0700010f_date20140219_sha490c5ffa4f5a.bin": {
-  "date": "02192014",
-  "loader_id": "8003",
-  "patch_level": "0700010f",
-  "sha256_12": "490c5ffa4f5a",
-  "signed": false,
-  "size": 3424
- },
  "family16_cpuid00700F01_rev07000110_date20180209_enc00_sha3b23983c84d4.bin": {
-  "date": "02092018",
-  "loader_id": "8003",
-  "patch_level": "07000110",
-  "sha256_12": "3b23983c84d4",
-  "signed": false,
-  "size": 3424
- },
- "family16_cpuid00700F01_rev07000110_date20180209_sha3b23983c84d4.bin": {
   "date": "02092018",
   "loader_id": "8003",
   "patch_level": "07000110",
@@ -695,14 +663,6 @@
   "signed": false,
   "size": 3424
  },
- "family16_cpuid00730F00_rev07030009_date20131206_sha816b06a6de0e.bin": {
-  "date": "12062013",
-  "loader_id": "8003",
-  "patch_level": "07030009",
-  "sha256_12": "816b06a6de0e",
-  "signed": false,
-  "size": 3424
- },
  "family16_cpuid00730F01_rev07030105_date20140505_enc00_sha3134084bae24.bin": {
   "date": "05052014",
   "loader_id": "8003",
@@ -711,23 +671,7 @@
   "signed": false,
   "size": 3424
  },
- "family16_cpuid00730F01_rev07030105_date20140505_sha3134084bae24.bin": {
-  "date": "05052014",
-  "loader_id": "8003",
-  "patch_level": "07030105",
-  "sha256_12": "3134084bae24",
-  "signed": false,
-  "size": 3424
- },
  "family16_cpuid00730F01_rev07030106_date20180902_enc00_sha69119af37c8c.bin": {
-  "date": "09022018",
-  "loader_id": "8003",
-  "patch_level": "07030106",
-  "sha256_12": "69119af37c8c",
-  "signed": false,
-  "size": 3424
- },
- "family16_cpuid00730F01_rev07030106_date20180902_sha69119af37c8c.bin": {
   "date": "09022018",
   "loader_id": "8003",
   "patch_level": "07030106",
@@ -3095,6 +3039,14 @@
   "signed": true,
   "size": 14368
  },
+ "family1a_cpuid00B00F81_rev0b008124_date20260408_enc01_sha9a73959ffb9c.bin": {
+  "date": "04082026",
+  "loader_id": "8016",
+  "patch_level": "0b008124",
+  "sha256_12": "9a73959ffb9c",
+  "signed": true,
+  "size": 14368
+ },
  "family1a_cpuid00B10F00_rev0b10000f_date20240320_enc01_sha949d8443eda1.bin": {
   "date": "03202024",
   "loader_id": "8010",
@@ -3231,6 +3183,14 @@
   "signed": true,
   "size": 14368
  },
+ "family1a_cpuid00B20F40_rev0b20403c_date20260330_enc01_sha0e9eabb04ce0.bin": {
+  "date": "03302026",
+  "loader_id": "8015",
+  "patch_level": "0b20403c",
+  "sha256_12": "0e9eabb04ce0",
+  "signed": true,
+  "size": 14368
+ },
  "family1a_cpuid00B40F00_rev0b40002d_date20231027_enc01_shac3ac91ac3245.bin": {
   "date": "10272023",
   "loader_id": "8010",
@@ -3327,6 +3287,14 @@
   "signed": true,
   "size": 14368
  },
+ "family1a_cpuid00B40F40_rev0b40403b_date20260620_enc01_sha338c49804609.bin": {
+  "date": "06202026",
+  "loader_id": "8015",
+  "patch_level": "0b40403b",
+  "sha256_12": "338c49804609",
+  "signed": true,
+  "size": 14368
+ },
  "family1a_cpuid00B40F41_rev0b404100_date20250224_enc01_sha77d651a48b9c.bin": {
   "date": "02242025",
   "loader_id": "8016",
@@ -3356,6 +3324,14 @@
   "loader_id": "8016",
   "patch_level": "0b40410b",
   "sha256_12": "8dcd7c1c3385",
+  "signed": true,
+  "size": 14368
+ },
+ "family1a_cpuid00B40F41_rev0b40410e_date20260620_enc01_sha0c9f1cfcb0b4.bin": {
+  "date": "06202026",
+  "loader_id": "8016",
+  "patch_level": "0b40410e",
+  "sha256_12": "0c9f1cfcb0b4",
   "signed": true,
   "size": 14368
  },
@@ -3412,6 +3388,14 @@
   "loader_id": "8016",
   "patch_level": "0b60803c",
   "sha256_12": "5546afde6a8b",
+  "signed": true,
+  "size": 14368
+ },
+ "family1a_cpuid00B60F80_rev0b608040_date20260703_enc01_sha5df59e3ab8bf.bin": {
+  "date": "07032026",
+  "loader_id": "8016",
+  "patch_level": "0b608040",
+  "sha256_12": "5df59e3ab8bf",
   "signed": true,
   "size": 14368
  },

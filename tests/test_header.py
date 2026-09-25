@@ -128,6 +128,9 @@ def test_signature_presence_matches_corpus(patch_file: Path):
     picks out exactly the RSA (family 0x17+) block -- not family 0x16, which
     carries a non-RSA signature slot.
     """
+    if patch_file.name not in _BASELINE:
+        pytest.skip(f"{patch_file.name} not in committed baseline; "
+                    f"regenerate it with tests/gen_baseline.py")
     header = Patch.from_bytes(patch_file.read_bytes()).header
     rsa_signed = _BASELINE[patch_file.name]["signed"]
     assert isinstance(header.signature, SignatureFam17Plus) == rsa_signed

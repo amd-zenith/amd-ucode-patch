@@ -14,7 +14,7 @@ validates the overlap.
 
 As the model grows, per-section tests will assert the parsed structures against
 these same raw facts. Regenerate the committed baseline with
-``tools/gen_baseline.py`` only when the corpus membership deliberately changes.
+``tests/gen_baseline.py`` only when the corpus membership deliberately changes.
 """
 
 import json
