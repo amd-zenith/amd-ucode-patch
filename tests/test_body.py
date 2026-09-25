@@ -20,6 +20,7 @@ from amd_ucode_patch.structures.body_data_encrypted import EncryptedBodyData
 from amd_ucode_patch.structures.body_data_plaintext import PlaintextBodyData
 from amd_ucode_patch.structures.body_data_fam0fto12 import BodyDataFam0fto12
 from amd_ucode_patch.structures.body_data_fam14to15 import BodyDataFam14to15
+from amd_ucode_patch.structures.body_data_fam17plus import BodyDataFam17Plus
 from amd_ucode_patch.structures.body_data_registry import (
     body_data_from_bytes,
     is_modelled,
@@ -31,14 +32,19 @@ from amd_ucode_patch.structures.patch_level import PatchLevel
 
 #: A family with no body model at all, and one whose body begins with a body
 #: header. Every real family now has one or the other, so the unmodelled case
-#: needs a family that is not real silicon.
-_OPAQUE_FAMILY, _BODY_HEADER_FAMILY = 0x99, 0x17
+#: needs a family that is not real silicon. Jaguar (0x16) carries a body header
+#: and still has no body model, which is what the body-header tests want.
+_OPAQUE_FAMILY, _BODY_HEADER_FAMILY = 0x99, 0x16
 #: The families whose body opens with match registers, and one of them.
 _MATCH_FAMILIES = frozenset({0x0F, 0x10, 0x11, 0x12})
 _MATCH_FAMILY = 0x10
 #: The families whose body opens with a frame, and one of them.
 _FRAME_FAMILIES = frozenset({0x14, 0x15})
 _FRAME_FAMILY = 0x14
+#: The Zen families, whose body opens with match registers then quads, and one
+#: of them. They pack two addresses per register, unlike _MATCH_FAMILIES.
+_QUAD_FAMILIES = frozenset({0x17, 0x19, 0x1A})
+_QUAD_FAMILY = 0x19
 
 
 def test_keeps_every_byte():
@@ -289,12 +295,13 @@ def test_registry_picks_the_model_by_family():
     assert isinstance(body_data_from_bytes(_OPAQUE_FAMILY, False, raw), PlaintextBodyData)
 
 
-@pytest.mark.parametrize("family", [0x0F, 0x10, 0x11, 0x12, 0x14, 0x15])
+@pytest.mark.parametrize(
+    "family", [0x0F, 0x10, 0x11, 0x12, 0x14, 0x15, 0x17, 0x19, 0x1A])
 def test_registry_models_the_families_with_a_body_layout(family):
     assert is_modelled(family)
 
 
-@pytest.mark.parametrize("family", [0x16, 0x17, 0x19, 0x1A, 0x99])
+@pytest.mark.parametrize("family", [0x16, 0x99])
 def test_registry_leaves_every_other_family_unmodelled(family):
     assert not is_modelled(family)
 
@@ -321,7 +328,7 @@ def test_match_registers_are_addresses_or_sentinels(patch_file: Path):
 def test_only_the_modelled_families_decode_match_registers(patch_file: Path):
     """Every other corpus body keeps all of its bytes verbatim or opaque."""
     patch = Patch.from_bytes(patch_file.read_bytes())
-    if patch.header.patch_level.family in _MATCH_FAMILIES:
+    if patch.header.patch_level.family in _MATCH_FAMILIES | _QUAD_FAMILIES:
         pytest.skip("family has a body model of its own")
     if patch.body.is_encrypted:
         pytest.skip("encrypted bodies are opaque")
@@ -556,3 +563,107 @@ def test_the_frame_agrees_with_the_encrypted_flag(patch_file: Path):
     readable = BodyDataFam14to15.frame_is_readable(
         patch.body.to_bytes(), patch.header.patch_level)
     assert readable is not declared
+
+
+# -- the Zen families 0x17, 0x19 and 0x1a: match registers then quads --
+
+#: Quads each Zen family's body holds.
+_QUAD_COUNTS = {0x17: 64, 0x19: 128, 0x1A: 370}
+#: Match registers each Zen family's body opens with.
+_ZEN_REGISTERS = {0x17: 22, 0x19: 38, 0x1A: 60}
+
+
+def _quad_body(quads: int, family: int = _QUAD_FAMILY) -> bytes:
+    """
+    A whole Zen body: the body header these families carry (left zeroed, so
+    the patch reads as plaintext), the family's match registers, then ``quads``
+    whole quads.
+    """
+    count = _ZEN_REGISTERS[family]
+    return (bytes(BodyHeader.SIZE)
+            + struct.pack(f"<{count}I", *range(count))
+            + bytes(quads * BodyDataFam17Plus.GEOMETRY.group_size))
+
+
+def test_zen_match_registers_are_split_off():
+    body = Body.from_bytes(_quad_body(3), _QUAD_FAMILY)
+    assert isinstance(body.body_data, BodyDataFam17Plus)
+    registers = body.body_data.match_registers
+    assert registers.count == _ZEN_REGISTERS[_QUAD_FAMILY]
+    assert registers.values == list(range(_ZEN_REGISTERS[_QUAD_FAMILY]))
+    assert registers.size == _ZEN_REGISTERS[_QUAD_FAMILY] * 4
+
+
+def test_zen_quad_count_is_derived_from_the_array():
+    body = Body.from_bytes(_quad_body(5), _QUAD_FAMILY)
+    assert body.body_data.op_quad_count == 5
+    assert body.body_data.holds_whole_quads
+
+
+def test_a_partial_zen_quad_is_not_whole():
+    body = Body.from_bytes(_quad_body(2) + b"x", _QUAD_FAMILY)
+    assert body.body_data.op_quad_count == 2
+    assert not body.body_data.holds_whole_quads
+
+
+def test_a_zen_body_with_no_quads_is_still_valid():
+    body = Body.from_bytes(_quad_body(0), _QUAD_FAMILY)
+    assert body.body_data.op_quads == b""
+    assert body.body_data.op_quad_count == 0
+    assert body.body_data.holds_whole_quads
+
+
+def test_zen_body_roundtrips():
+    raw = _quad_body(4)
+    assert Body.from_bytes(raw, _QUAD_FAMILY).to_bytes() == raw
+
+
+def test_a_short_zen_body_is_refused():
+    """Too few bytes to hold the registers the family declares."""
+    with pytest.raises(ValueError):
+        Body.from_bytes(b"short", _QUAD_FAMILY)
+
+
+@pytest.mark.parametrize("family", sorted(_QUAD_FAMILIES))
+def test_every_zen_family_uses_the_quad_geometry(family):
+    body = Body.from_bytes(_quad_body(1, family), family)
+    assert body.body_data.GEOMETRY.group_size == 36
+    assert body.body_data.op_quad_count == 1
+
+
+# -- corpus-backed --
+
+def test_zen_bodies_are_registers_then_whole_quads(patch_file: Path):
+    """
+    A decrypted Zen body is exactly its match registers plus the quad array,
+    with nothing left over and the quad count its family uses.
+    """
+    patch = Patch.from_bytes(patch_file.read_bytes())
+    family = patch.header.patch_level.family
+    if family not in _QUAD_FAMILIES:
+        pytest.skip("not a Zen family")
+    if patch.body.is_encrypted:
+        pytest.skip("encrypted bodies are opaque")
+    body_data = patch.body.body_data
+    assert isinstance(body_data, BodyDataFam17Plus)
+    assert body_data.match_registers.count == _ZEN_REGISTERS[family]
+    assert body_data.holds_whole_quads
+    assert body_data.op_quad_count == _QUAD_COUNTS[family]
+    assert (body_data.match_registers.size + len(body_data.op_quads)
+            == len(body_data.to_bytes()))
+
+
+def test_zen_match_registers_decode_as_packed_pairs(patch_file: Path):
+    """
+    Every address a decrypted Zen body names fits the 13 bits the packed pair
+    gives it, and the four top bits of each register stay clear.
+    """
+    patch = Patch.from_bytes(patch_file.read_bytes())
+    if patch.header.patch_level.family not in _QUAD_FAMILIES:
+        pytest.skip("not a Zen family")
+    if patch.body.is_encrypted:
+        pytest.skip("encrypted bodies are opaque")
+    registers = patch.body.body_data.match_registers
+    assert len(registers.addresses) == 2 * registers.count
+    assert all(address <= 0x1FFF for address in registers.addresses)
+    assert set(registers.used) <= set(registers.addresses)

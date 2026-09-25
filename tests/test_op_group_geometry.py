@@ -45,14 +45,14 @@ def test_the_triad_families_share_one_geometry(family):
     assert g.group_size == 28
 
 
-@pytest.mark.parametrize("family", [0x17, 0x19])
+@pytest.mark.parametrize("family", [0x17, 0x19, 0x1A])
 def test_the_quad_families_share_one_geometry(family):
     g = OpGroupGeometry.for_family(family)
     assert (g.op_size, g.ops_per_group, g.sequence_word_size) == (8, 4, 4)
     assert g.group_size == 36
 
 
-@pytest.mark.parametrize("family", [0x14, 0x15, 0x16, 0x1A, 0x99])
+@pytest.mark.parametrize("family", [0x14, 0x15, 0x16, 0x99])
 def test_no_geometry_where_the_format_does_not_settle_one(family):
     """
     A group size read off repeating filler is not the same as a layout the

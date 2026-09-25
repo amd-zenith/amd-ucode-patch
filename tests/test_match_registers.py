@@ -13,13 +13,19 @@ import struct
 
 import pytest
 
-from amd_ucode_patch.structures.match_registers import MatchRegisters
+from amd_ucode_patch.structures.match_registers import (
+    PACKED_ADDRESS_PAIR,
+    SINGLE_ADDRESS,
+    MatchRegisters,
+)
 
 #: How many registers families 0x0f-0x11 carry.
 _COUNT = 8
 #: The families whose body opens with match registers, and one of them.
 _MATCH_FAMILIES = (0x0F, 0x10, 0x11, 0x12)
 _MATCH_FAMILY = 0x10
+#: The Zen families, which carry them too but pack them differently.
+_ZEN_FAMILIES = (0x17, 0x19, 0x1A)
 #: A family whose body does not.
 _OTHER_FAMILY = 0x14
 
@@ -117,9 +123,62 @@ def test_count_is_claimed_for_the_proven_families(family):
     assert MatchRegisters.count_for_family(family) == _COUNT
 
 
-@pytest.mark.parametrize("family", [0x14, 0x15, 0x16, 0x17, 0x19, 0x1A])
+@pytest.mark.parametrize("family", [0x14, 0x15, 0x16])
 def test_no_count_is_claimed_for_any_other_family(family):
     assert MatchRegisters.count_for_family(family) == 0
+    assert MatchRegisters.layout_for_family(family) is None
+
+
+@pytest.mark.parametrize("family,count", [(0x17, 22), (0x19, 38), (0x1A, 60)])
+def test_the_zen_families_claim_their_own_counts(family, count):
+    assert MatchRegisters.count_for_family(family) == count
+
+
+@pytest.mark.parametrize("family", _MATCH_FAMILIES + _ZEN_FAMILIES)
+def test_a_family_that_claims_a_count_also_declares_a_layout(family):
+    assert MatchRegisters.count_for_family(family) > 0
+    assert MatchRegisters.layout_for_family(family) is not None
+
+
+# -- how a register packs its addresses --
+
+@pytest.mark.parametrize("family", _MATCH_FAMILIES)
+def test_the_older_families_hold_one_address_per_register(family):
+    assert MatchRegisters.layout_for_family(family) is SINGLE_ADDRESS
+
+
+@pytest.mark.parametrize("family", _ZEN_FAMILIES)
+def test_the_zen_families_pack_two_addresses_per_register(family):
+    layout = MatchRegisters.layout_for_family(family)
+    assert layout is PACKED_ADDRESS_PAIR
+    assert (layout.addresses_per_register, layout.address_bits) == (2, 13)
+    assert layout.has_in_use_flag
+    assert layout.stride == 14
+    assert layout.address_mask == 0x1FFF
+
+
+def test_a_packed_pair_yields_both_addresses():
+    """13-bit m1, its flag, 13-bit m2, its flag, then four unused bits."""
+    packed = 0x0123 | (1 << 13) | (0x1ABC << 14) | (1 << 27)
+    registers = MatchRegisters.from_bytes(_array([packed]), 1, PACKED_ADDRESS_PAIR)
+    assert registers.count == 1
+    assert registers.addresses == [0x0123, 0x1ABC]
+    assert registers.used == [0x0123, 0x1ABC]
+
+
+def test_a_clear_flag_marks_a_packed_address_unused():
+    """The flag decides, not the address: address zero can still be in use."""
+    packed = 0x0123 | (0x1ABC << 14) | (1 << 27)      # m1's flag left clear
+    registers = MatchRegisters.from_bytes(_array([packed]), 1, PACKED_ADDRESS_PAIR)
+    assert registers.addresses == [0x0123, 0x1ABC]
+    assert registers.used == [0x1ABC]
+
+
+def test_a_packed_pair_roundtrips():
+    raw = _array([0x0BE84000, 0x00002FF8])
+    registers = MatchRegisters.from_bytes(raw, 2, PACKED_ADDRESS_PAIR)
+    assert registers.to_bytes() == raw
+    assert len(registers.addresses) == 4
 
 
 def test_for_family_parses_the_families_that_carry_them():

@@ -31,10 +31,19 @@ COLS = ["File", "Date", "Patch level", "Loader ID",
         # the header data, offsets 10-31 in order
         "Size units", "Triads", "Init", "Checksum", "Req PL", "NB dev", "CPUID",
         # then the signature block, the body header and the body data
-        "Signed", "Encrypted", "Body PL", "Match regs", "Size"]
+        "Signed", "Encrypted", "Body PL", "Match regs", "Op groups", "Size"]
 
 #: Shown wherever a field is not defined by the patch's format.
 _NA = "-"
+
+#: The count and wholeness properties a modelled body exposes for its micro-op
+#: group array, in the order they are looked for. The older families group
+#: their ops in triads and Zen in quads, so the names differ; a body carries
+#: at most one pair, and a body not modelled that far carries neither.
+_OP_GROUP_FIELDS = (
+    ("op_triad_count", "holds_whole_triads"),
+    ("op_quad_count", "holds_whole_quads"),
+)
 
 
 def _field(data: HeaderData, name: str) -> object | None:
@@ -121,7 +130,9 @@ def _checksum_matches(patch: Patch) -> bool | None:
 
 def _match_registers(registers: MatchRegisters | None) -> str:
     """
-    How many match registers the body opens with, and how many are in use.
+    How many ROM addresses the body's match registers name, and how many of
+    those slots are in use. The Zen families pack two addresses into each
+    register, so the total is not the register count.
 
     ``None`` means this format's body is not modelled that far, which is not the
     same as a body that carries no match registers. A body too short to hold the
@@ -130,7 +141,37 @@ def _match_registers(registers: MatchRegisters | None) -> str:
     """
     if registers is None:
         return _NA
-    return f"{len(registers.used)}/{registers.count}"
+    return f"{len(registers.used)}/{len(registers.addresses)}"
+
+
+def _op_group_count(body_data) -> str:
+    """
+    How many whole micro-op groups the body's array holds, or ``_NA`` where
+    the body is not modelled that far.
+
+    This is what the body itself carves out, not what the header claims. On
+    the triad families the header records the same count, and the "Triads"
+    column shows that one; on Zen the header records none, so this is the only
+    place the count appears.
+    """
+    for count_name, _ in _OP_GROUP_FIELDS:
+        count = getattr(body_data, count_name, None)
+        if count is not None:
+            return str(count)
+    return _NA
+
+
+def _op_groups_are_whole(patch: Patch) -> bool | None:
+    """
+    Whether the micro-op array divides exactly into groups, or ``None`` where
+    the body is not modelled that far. Bytes left over mean the array is not
+    the length its geometry says it should be.
+    """
+    body_data = patch.body.body_data
+    for count_name, whole_name in _OP_GROUP_FIELDS:
+        if getattr(body_data, count_name, None) is not None:
+            return bool(getattr(body_data, whole_name, False))
+    return None
 
 
 def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str], bool]:
@@ -187,6 +228,7 @@ def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str], bool
         "yes" if encrypted else "no",
         str(body_pl) if body_pl is not None else _NA,
         _match_registers(match_registers),
+        _op_group_count(patch.body.body_data),
         str(len(raw)),
     )
 
@@ -210,6 +252,9 @@ def _row_fields(path, raw: bytes) -> tuple[tuple[str, ...], dict[str, str], bool
     required_ok = _required_level_agrees(patch)
     if required_ok is not None:
         colours["Req PL"] = "green" if required_ok else "red"
+    groups_ok = _op_groups_are_whole(patch)
+    if groups_ok is not None:
+        colours["Op groups"] = "green" if groups_ok else "red"
     # Cross-check the patch level against the header's CPUID field. Newer patch
     # levels pack the whole CPUID, so the whole signature is checked; older ones
     # carry only the family, so just that is.
