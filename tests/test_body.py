@@ -26,6 +26,9 @@ from amd_ucode_patch.structures.body_data_registry import (
     is_modelled,
 )
 from amd_ucode_patch.structures.body_header import BodyHeader
+from amd_ucode_patch.structures.body_header_fam16to19 import BodyHeaderFam16to19
+from amd_ucode_patch.structures.body_header_fam1a import BodyHeaderFam1a
+from amd_ucode_patch.structures.body_header_registry import body_header_from_bytes
 from amd_ucode_patch.structures.match_registers import MatchRegisters
 from amd_ucode_patch.structures.patch import Patch
 from amd_ucode_patch.structures.patch_level import PatchLevel
@@ -117,6 +120,25 @@ def test_body_header_flags_are_zero_or_one(patch_file: Path):
     assert patch.body.body_header.encrypted in (0, 1)
 
 
+def test_body_header_carries_the_loader_id_copy(patch_file: Path):
+    """
+    Family 0x1A (Zen 5) models offset 2-3 of the body header as a copy of the
+    header's loader id, and it equals the header's loader id on every such
+    patch. The older signed families (0x16 Jaguar, 0x17 Zen 1-2, 0x19 Zen 3-4)
+    model the same span as the two ``unknown`` bytes, which stay zero.
+    """
+    patch = Patch.from_bytes(patch_file.read_bytes())
+    bh = patch.body.body_header
+    if bh is None:
+        pytest.skip("patch has no body header")
+    if patch.header.patch_level.family == 0x1A:
+        assert isinstance(bh, BodyHeaderFam1a)
+        assert bh.loader_id.value == patch.header.loader_id.value
+    else:
+        assert isinstance(bh, BodyHeaderFam16to19)
+        assert (bh.unknown1, bh.unknown2) == (0, 0)
+
+
 def test_opaque_family_keeps_the_whole_body():
     body = Body.from_bytes(b"the whole body", _OPAQUE_FAMILY)
     assert body.body_header is None
@@ -124,7 +146,7 @@ def test_opaque_family_keeps_the_whole_body():
 
 
 def test_body_header_family_splits_the_header_off():
-    header = BodyHeader.from_bytes(bytes(BodyHeader.SIZE), _BODY_HEADER_FAMILY)
+    header = body_header_from_bytes(_BODY_HEADER_FAMILY, bytes(BodyHeader.SIZE))
     raw = header.to_bytes() + b"microcode"
     body = Body.from_bytes(raw, _BODY_HEADER_FAMILY)
     assert body.body_header == header
@@ -133,7 +155,7 @@ def test_body_header_family_splits_the_header_off():
 
 
 def test_body_header_from_bytes_returns_none_for_a_bodyless_family():
-    assert BodyHeader.from_bytes(bytes(BodyHeader.SIZE), _OPAQUE_FAMILY) is None
+    assert body_header_from_bytes(_OPAQUE_FAMILY, bytes(BodyHeader.SIZE)) is None
 
 
 # -- the encrypted / plaintext distinction --

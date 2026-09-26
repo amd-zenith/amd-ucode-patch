@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from amd_ucode_patch.structures.body_data import BodyData
 from amd_ucode_patch.structures.body_data_registry import body_data_from_bytes
 from amd_ucode_patch.structures.body_header import BodyHeader
+from amd_ucode_patch.structures.body_header_registry import body_header_from_bytes
 
 
 @dataclass
@@ -47,7 +48,7 @@ class Body:
         plaintext.
         """
         data = bytes(data)
-        body_header = BodyHeader.from_bytes(data, family)
+        body_header = body_header_from_bytes(family, data)
         remainder = data[BodyHeader.SIZE:] if body_header is not None else data
         if encrypted is None:
             encrypted = body_header is not None and bool(body_header.encrypted)
