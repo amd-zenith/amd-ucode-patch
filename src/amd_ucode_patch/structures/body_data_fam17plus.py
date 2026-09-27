@@ -57,17 +57,51 @@ class BodyDataFam17Plus(BodyData):
         return cls(match_registers=registers, op_quads=data[registers.size:])
 
     @property
+    def _quad_region_size(self) -> int:
+        """
+        Bytes of :attr:`op_quads` that are whole quads, before any trailing zero
+        padding.
+
+        The op region is a run of 36-byte quads, and on some formats (0x1a) a
+        stretch of zero padding after them. The boundary is the first quad that
+        is entirely zero: a real quad never is, because even an idle quad is
+        filled with the NOP micro-op (0x007f9c0000000000), not with zeros.
+        Formats that carry no padding (0x17, 0x19) have no such quad, so the
+        whole region counts.
+        """
+        step = self.GEOMETRY.group_size
+        size = 0
+        while size + step <= len(self.op_quads):
+            if self.op_quads[size:size + step] == bytes(step):
+                break
+            size += step
+        return size
+
+    @property
     def op_quad_count(self) -> int:
-        """How many whole micro-op quads the array holds."""
-        return self.GEOMETRY.group_count(len(self.op_quads))
+        """
+        How many whole micro-op quads the array holds, not counting the trailing
+        zero padding some formats carry. This is the reliable op-group count:
+        the ``len // 36`` reading over-counts, splitting the padding into
+        all-zero pseudo-quads.
+        """
+        return self._quad_region_size // self.GEOMETRY.group_size
+
+    @property
+    def op_quad_padding(self) -> bytes:
+        """The trailing padding after the quad array; zero bytes on a real body."""
+        return self.op_quads[self._quad_region_size:]
 
     @property
     def holds_whole_quads(self) -> bool:
         """
-        Whether the array divides exactly into quads, with no bytes left over.
-        A real one always does; a short or padded array does not.
+        Whether the array is a whole number of quads followed only by zero
+        padding. A real body always is; a truncated or corrupt one leaves
+        non-zero bytes over, which is what makes this a verification and not a
+        tautology.
         """
-        return self.GEOMETRY.holds_whole_groups(len(self.op_quads))
+        padding = self.op_quad_padding
+        return padding == bytes(len(padding))
 
     def to_bytes(self) -> bytes:
         """Serialize the body data back to its exact byte encoding."""

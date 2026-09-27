@@ -604,11 +604,16 @@ def _quad_body(quads: int, family: int = _QUAD_FAMILY) -> bytes:
     A whole Zen body: the body header these families carry (left zeroed, so
     the patch reads as plaintext), the family's match registers, then ``quads``
     whole quads.
+
+    The quads are filled with a non-zero pattern (four NOP micro-ops), not zeros:
+    the model reads a run of all-zero quads as trailing padding, so an all-zero
+    filler would be counted as padding rather than as quads.
     """
     count = _ZEN_REGISTERS[family]
+    filler = struct.pack("<4Q", *([_NOP_MICRO_OP] * 4)) + b"\x00\x00\x00\x00"
     return (bytes(BodyHeader.SIZE)
             + struct.pack(f"<{count}I", *range(count))
-            + bytes(quads * BodyDataFam17Plus.GEOMETRY.group_size))
+            + filler * quads)
 
 
 def test_zen_match_registers_are_split_off():
@@ -629,6 +634,26 @@ def test_zen_quad_count_is_derived_from_the_array():
 def test_a_partial_zen_quad_is_not_whole():
     body = Body.from_bytes(_quad_body(2) + b"x", _QUAD_FAMILY)
     assert body.body_data.op_quad_count == 2
+    assert not body.body_data.holds_whole_quads
+
+
+def test_zen_quads_then_zero_padding_count_only_the_quads():
+    """
+    Trailing zero padding after the quad array (as family 0x1a carries) is not
+    counted as quads: the count is the real groups, and the body still verifies
+    as whole because the leftover is all zero.
+    """
+    padding = bytes(3 * BodyDataFam17Plus.GEOMETRY.group_size + 17)
+    body = Body.from_bytes(_quad_body(4) + padding, _QUAD_FAMILY)
+    assert body.body_data.op_quad_count == 4
+    assert body.body_data.op_quad_padding == padding
+    assert body.body_data.holds_whole_quads
+
+
+def test_zen_nonzero_bytes_after_the_quads_are_not_whole():
+    """A non-zero leftover is corruption, not padding, so the body is not whole."""
+    body = Body.from_bytes(_quad_body(4) + bytes(20) + b"\x01", _QUAD_FAMILY)
+    assert body.body_data.op_quad_count == 4
     assert not body.body_data.holds_whole_quads
 
 
@@ -682,9 +707,9 @@ def test_zen_bodies_are_registers_then_whole_quads(patch_file: Path):
 
 def test_fam1a_body_is_registers_then_op_groups_then_padding(patch_file: Path):
     """
-    Family 0x1a is the one decrypted Zen family whose body does not fill with
-    whole quads. It is 62 match registers, then a run of 36-byte op-groups, then
-    zero padding to the end of the body.
+    Family 0x1a is the one decrypted Zen family that carries trailing padding.
+    Its body is 62 match registers, then a run of 36-byte op-groups, then zero
+    padding to the end of the body -- unlike 0x17/0x19, which fill exactly.
 
     The geometry is pinned the same way 0x17/0x19 were: split into 36-byte
     groups of four u64 op lanes and a trailing u32 sequence word, the idle
@@ -692,6 +717,9 @@ def test_fam1a_body_is_registers_then_op_groups_then_padding(patch_file: Path):
     op, and never in the sequence word. That fixes the 36-byte stride, the
     62-register split point, and the sequence word sitting at the end of the
     group; a one-lane shift in any of the three destroys the invariant.
+
+    The op-group count the model reports is the number of real groups, with the
+    trailing zeros recognised as padding rather than counted as all-zero quads.
     """
     patch = Patch.from_bytes(patch_file.read_bytes())
     if patch.header.patch_level.family != 0x1A:
@@ -724,9 +752,12 @@ def test_fam1a_body_is_registers_then_op_groups_then_padding(patch_file: Path):
     # split, so whole groups of four NOPs exist. A wrong register count or a
     # sequence-word-first framing shifts the lanes and finds none.
     assert empty_groups > 0
-    # 0x1a is registers + groups + padding, not registers + whole quads: the op
-    # region does not divide exactly into 36-byte groups the way 0x17/0x19 do.
-    assert not body_data.holds_whole_quads
+    # The model counts exactly these real groups and recognises the trailing
+    # zeros as padding, so the reported count is reliable and the body verifies
+    # as whole (op groups + zero padding, nothing left over).
+    assert body_data.op_quad_count == groups
+    assert body_data.op_quad_padding == bytes(len(body_data.op_quad_padding))
+    assert body_data.holds_whole_quads
     assert (body_data.match_registers.size + len(body_data.op_quads)
             == len(body_data.to_bytes()))
 
