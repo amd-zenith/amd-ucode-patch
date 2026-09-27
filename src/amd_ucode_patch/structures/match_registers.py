@@ -72,7 +72,7 @@ class MatchRegisters:
         0x12: 8,
         0x17: 22,
         0x19: 38,
-        0x1A: 60,
+        0x1A: 62,
     }
     #: How each family packs one register. Every family in
     #: :data:`_COUNT_BY_FAMILY` appears here too.

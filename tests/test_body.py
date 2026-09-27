@@ -589,10 +589,14 @@ def test_the_frame_agrees_with_the_encrypted_flag(patch_file: Path):
 
 # -- the Zen families 0x17, 0x19 and 0x1a: match registers then quads --
 
-#: Quads each Zen family's body holds.
-_QUAD_COUNTS = {0x17: 64, 0x19: 128, 0x1A: 370}
+#: Whole quads each family whose body is exactly registers + quads holds. Only
+#: 0x17 and 0x19 fill their body this way; 0x1a is registers + groups + zero
+#: padding, so it is tested separately.
+_QUAD_COUNTS = {0x17: 64, 0x19: 128}
 #: Match registers each Zen family's body opens with.
-_ZEN_REGISTERS = {0x17: 22, 0x19: 38, 0x1A: 60}
+_ZEN_REGISTERS = {0x17: 22, 0x19: 38, 0x1A: 62}
+#: The idle micro-op (zentool: NOP). 0x007f9c0000000000, little-endian in file.
+_NOP_MICRO_OP = 0x007F9C0000000000
 
 
 def _quad_body(quads: int, family: int = _QUAD_FAMILY) -> bytes:
@@ -657,13 +661,14 @@ def test_every_zen_family_uses_the_quad_geometry(family):
 
 def test_zen_bodies_are_registers_then_whole_quads(patch_file: Path):
     """
-    A decrypted Zen body is exactly its match registers plus the quad array,
-    with nothing left over and the quad count its family uses.
+    A decrypted 0x17/0x19 body is exactly its match registers plus the quad
+    array, with nothing left over and the quad count its family uses. (0x1a
+    carries trailing padding instead -- see the 0x1a test below.)
     """
     patch = Patch.from_bytes(patch_file.read_bytes())
     family = patch.header.patch_level.family
-    if family not in _QUAD_FAMILIES:
-        pytest.skip("not a Zen family")
+    if family not in _QUAD_COUNTS:
+        pytest.skip("family is not registers + whole quads")
     if patch.body.is_encrypted:
         pytest.skip("encrypted bodies are opaque")
     body_data = patch.body.body_data
@@ -671,6 +676,57 @@ def test_zen_bodies_are_registers_then_whole_quads(patch_file: Path):
     assert body_data.match_registers.count == _ZEN_REGISTERS[family]
     assert body_data.holds_whole_quads
     assert body_data.op_quad_count == _QUAD_COUNTS[family]
+    assert (body_data.match_registers.size + len(body_data.op_quads)
+            == len(body_data.to_bytes()))
+
+
+def test_fam1a_body_is_registers_then_op_groups_then_padding(patch_file: Path):
+    """
+    Family 0x1a is the one decrypted Zen family whose body does not fill with
+    whole quads. It is 62 match registers, then a run of 36-byte op-groups, then
+    zero padding to the end of the body.
+
+    The geometry is pinned the same way 0x17/0x19 were: split into 36-byte
+    groups of four u64 op lanes and a trailing u32 sequence word, the idle
+    micro-op appears only as a suffix of the four op lanes -- never before a real
+    op, and never in the sequence word. That fixes the 36-byte stride, the
+    62-register split point, and the sequence word sitting at the end of the
+    group; a one-lane shift in any of the three destroys the invariant.
+    """
+    patch = Patch.from_bytes(patch_file.read_bytes())
+    if patch.header.patch_level.family != 0x1A:
+        pytest.skip("not family 0x1a")
+    if patch.body.is_encrypted:
+        pytest.skip("encrypted bodies are opaque")
+    body_data = patch.body.body_data
+    assert isinstance(body_data, BodyDataFam17Plus)
+    assert body_data.match_registers.count == 62
+
+    quads = body_data.op_quads
+    step = BodyDataFam17Plus.GEOMETRY.group_size  # 36
+    groups = 0
+    empty_groups = 0
+    for base in range(0, len(quads) - step + 1, step):
+        group = quads[base:base + step]
+        if group == bytes(step):
+            # first all-zero group: everything from here on is padding.
+            assert quads[base:] == bytes(len(quads) - base)
+            break
+        op_lanes = struct.unpack_from("<4Q", group, 0)  # the u32 tail is the seq word
+        is_nop = [op == _NOP_MICRO_OP for op in op_lanes]
+        # the idle micro-op only ever pads the tail of the four op lanes: the
+        # NOP flags read False* then True*, never a real op after a NOP.
+        assert is_nop == sorted(is_nop)
+        groups += 1
+        empty_groups += all(is_nop)
+    assert groups > 0
+    # Non-vacuous: the idle micro-op really does land on the op lanes at this
+    # split, so whole groups of four NOPs exist. A wrong register count or a
+    # sequence-word-first framing shifts the lanes and finds none.
+    assert empty_groups > 0
+    # 0x1a is registers + groups + padding, not registers + whole quads: the op
+    # region does not divide exactly into 36-byte groups the way 0x17/0x19 do.
+    assert not body_data.holds_whole_quads
     assert (body_data.match_registers.size + len(body_data.op_quads)
             == len(body_data.to_bytes()))
 

@@ -129,7 +129,7 @@ def test_no_count_is_claimed_for_any_other_family(family):
     assert MatchRegisters.layout_for_family(family) is None
 
 
-@pytest.mark.parametrize("family,count", [(0x17, 22), (0x19, 38), (0x1A, 60)])
+@pytest.mark.parametrize("family,count", [(0x17, 22), (0x19, 38), (0x1A, 62)])
 def test_the_zen_families_claim_their_own_counts(family, count):
     assert MatchRegisters.count_for_family(family) == count
 
