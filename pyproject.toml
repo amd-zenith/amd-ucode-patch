@@ -30,8 +30,8 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
-  "amd-cpuid==1.0.2",
-  "pycryptodome==3.23.0",
+  "amd-cpuid==1.1.0",
+  "pycryptodome==3.24.0",
   "rich==15.0.0",
 ]
 
