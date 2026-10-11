@@ -41,8 +41,3 @@ def parse_modulus(value: str) -> bytes:
 def parse_private(value: str) -> bytes:
     """Parse a 256-byte RSA private exponent from hex."""
     return parse_fixed_hex(value, 256, "private exponent")
-
-
-def parse_check(value: str) -> bytes:
-    """Parse a 256-byte signature check (Montgomery helper) field from hex."""
-    return parse_fixed_hex(value, 256, "check")

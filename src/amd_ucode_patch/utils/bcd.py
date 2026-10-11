@@ -8,22 +8,10 @@ their build date this way.
 """
 
 
-def is_bcd(value: int, num_nibbles: int) -> bool:
-    """
-    Return ``True`` if the low ``num_nibbles`` nibbles of ``value`` are all valid
-    decimal digits (0-9), i.e. the value is a well-formed packed-BCD number.
-    """
-    for i in range(num_nibbles):
-        if ((value >> (i * 4)) & 0xF) > 9:
-            return False
-    return True
-
-
 def decode_bcd(value: int, num_nibbles: int) -> int:
     """
     Decode the low ``num_nibbles`` nibbles of a packed-BCD ``value`` into its
-    decimal integer equivalent (e.g. ``0x2018 -> 2018``). Callers must first
-    confirm the value is valid BCD via :func:`is_bcd`.
+    decimal integer equivalent (e.g. ``0x2018 -> 2018``).
     """
     result = 0
     multiplier = 1
