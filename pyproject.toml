@@ -35,6 +35,11 @@ dependencies = [
   "rich==15.0.0",
 ]
 
+[project.optional-dependencies]
+test = [
+  "pytest==9.1.1",
+]
+
 [project.urls]
 Homepage = "https://github.com/amd-zenith/amd-ucode-patch"
 Repository = "https://github.com/amd-zenith/amd-ucode-patch"
