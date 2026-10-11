@@ -30,6 +30,7 @@ from amd_ucode_patch.structures.body_header_fam16to19 import BodyHeaderFam16to19
 from amd_ucode_patch.structures.body_header_fam1a import BodyHeaderFam1a
 from amd_ucode_patch.structures.body_header_registry import body_header_from_bytes
 from amd_ucode_patch.structures.match_registers import MatchRegisters
+from amd_ucode_patch.structures.op_group import OpGroup
 from amd_ucode_patch.structures.patch import Patch
 from amd_ucode_patch.structures.patch_level import PatchLevel
 
@@ -481,6 +482,36 @@ def test_a_partial_triad_is_not_whole():
     assert body.body_data.op_triad_count == 3        # floor: the whole ones
 
 
+# -- direct micro-op access: the deobfuscated triads --
+
+def _obfuscated_triad_body(groups: list[tuple[list[int], int]]) -> bytes:
+    """Eight match registers, then the given (ops, sequence_word) triads scrambled."""
+    from amd_ucode_patch.structures.triad_obfuscation import obfuscate_triad
+    body = struct.pack("<8I", *range(8))
+    for index, (ops, sw) in enumerate(groups):
+        body += obfuscate_triad(ops, sw, index)
+    return body
+
+
+def test_pre_zen_op_groups_decode_the_scrambled_triads():
+    triads = [([0x1111111111111111, 0x2222222222222222, 0x3333333333333333], 0x0A0A),
+              ([0xDEADBEEFCAFEBABE, 0x0, 0xFFFFFFFFFFFFFFFF], 0x1234)]
+    body = Body.from_bytes(_obfuscated_triad_body(triads), _MATCH_FAMILY)
+    groups = body.body_data.op_groups
+    assert [(g.ops, g.control) for g in groups] == triads
+
+
+def test_pre_zen_op_groups_reobfuscate_to_the_raw_triads():
+    """The decoded view does not disturb the byte-exact round-trip."""
+    from amd_ucode_patch.structures.triad_obfuscation import obfuscate_triad
+    triads = [([0x1, 0x2, 0x3], 0xAA), ([0x4, 0x5, 0x6], 0xBB), ([0x7, 0x8, 0x9], 0xCC)]
+    body = Body.from_bytes(_obfuscated_triad_body(triads), _MATCH_FAMILY)
+    body_data = body.body_data
+    rebuilt = b"".join(obfuscate_triad(g.ops, g.control, i)
+                       for i, g in enumerate(body_data.op_groups))
+    assert rebuilt == body_data.op_triads
+
+
 # -- corpus-backed --
 
 def test_body_triad_count_matches_the_header(patch_file: Path):
@@ -662,6 +693,23 @@ def test_a_zen_body_with_no_quads_is_still_valid():
     assert body.body_data.op_quads == b""
     assert body.body_data.op_quad_count == 0
     assert body.body_data.holds_whole_quads
+
+
+def test_zen_op_groups_expose_four_ops_and_a_sequence_word():
+    """Direct micro-op access: the Zen quads parse straight (no deobfuscation)."""
+    body = Body.from_bytes(_quad_body(4), _QUAD_FAMILY)
+    groups = body.body_data.op_groups
+    assert len(groups) == body.body_data.op_quad_count == 4
+    assert all(len(g.ops) == 4 for g in groups)
+    # the quads are stored in the clear, so the groups re-serialize to the region
+    region = body.body_data.op_quads[:len(groups) * OpGroup.size(4)]
+    assert b"".join(g.to_bytes() for g in groups) == region
+
+
+def test_zen_op_groups_stop_at_the_padding():
+    """The padding some 0x1a bodies carry is not turned into op groups."""
+    body = Body.from_bytes(_quad_body(3) + bytes(200), _QUAD_FAMILY)
+    assert len(body.body_data.op_groups) == 3
 
 
 def test_zen_body_roundtrips():

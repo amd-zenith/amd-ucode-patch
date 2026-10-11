@@ -15,7 +15,9 @@ from typing import ClassVar
 
 from amd_ucode_patch.structures.body_data import BodyData
 from amd_ucode_patch.structures.match_registers import MatchRegisters
+from amd_ucode_patch.structures.op_group import OpGroup
 from amd_ucode_patch.structures.op_group_geometry import OpGroupGeometry
+from amd_ucode_patch.structures.triad_obfuscation import deobfuscate_triad
 
 
 @dataclass
@@ -74,6 +76,28 @@ class BodyDataFam0fto12(BodyData):
         A real one always does; a short or padded array does not.
         """
         return self.GEOMETRY.holds_whole_groups(len(self.op_triads))
+
+    @property
+    def op_groups(self) -> list[OpGroup]:
+        """
+        The micro-op triads, deobfuscated into individual micro-ops and their
+        sequence word: direct access to the decoded microcode.
+
+        AMD ships these triads scrambled, so the raw :attr:`op_triads` are not
+        directly readable; each is descrambled by its position in the array and
+        bit-inverted (see :mod:`amd_ucode_patch.structures.triad_obfuscation`),
+        giving the logical values the RUB-SysSec field tables decode. :attr:`op_triads`
+        keeps the raw bytes, so the patch still round-trips byte for byte;
+        re-scrambling these groups with ``obfuscate_triad`` reproduces them.
+        Only whole triads are decoded; a trailing partial triad is ignored.
+        """
+        step = self.GEOMETRY.group_size
+        groups = []
+        for index in range(self.op_triad_count):
+            ops, sequence_word = deobfuscate_triad(
+                self.op_triads[index * step:index * step + step], index)
+            groups.append(OpGroup(ops=ops, control=sequence_word))
+        return groups
 
     @property
     def op_triad_checksum(self) -> int:

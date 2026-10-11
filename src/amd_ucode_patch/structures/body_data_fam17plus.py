@@ -14,6 +14,7 @@ from typing import ClassVar
 
 from amd_ucode_patch.structures.body_data import BodyData
 from amd_ucode_patch.structures.match_registers import MatchRegisters
+from amd_ucode_patch.structures.op_group import OpGroup
 from amd_ucode_patch.structures.op_group_geometry import OpGroupGeometry
 
 
@@ -91,6 +92,18 @@ class BodyDataFam17Plus(BodyData):
     def op_quad_padding(self) -> bytes:
         """The trailing padding after the quad array; zero bytes on a real body."""
         return self.op_quads[self._quad_region_size:]
+
+    @property
+    def op_groups(self) -> list[OpGroup]:
+        """
+        The micro-op quads as individual micro-ops and their sequence word:
+        direct access to the decoded microcode. The Zen families store their
+        quads in the clear (unlike the scrambled pre-Zen triads), so this is a
+        straight little-endian parse of the quad region, excluding any trailing
+        zero padding.
+        """
+        region = self.op_quads[:self._quad_region_size]
+        return OpGroup.array_from_bytes(region, self.GEOMETRY.ops_per_group)
 
     @property
     def holds_whole_quads(self) -> bool:
