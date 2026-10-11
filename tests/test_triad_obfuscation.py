@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 
 from amd_ucode_patch.structures.patch import Patch
-from amd_ucode_patch.structures.triad_obfuscation import (
+from amd_ucode_patch.utils.triad_obfuscation import (
     TRIAD_SIZE,
     deobfuscate_triad,
     obfuscate_triad,

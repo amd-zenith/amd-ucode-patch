@@ -7,31 +7,7 @@ Deobfuscation of the pre-Zen micro-op triads (families 0x0f-0x12).
 AMD ships the K8/K10-era microcode triads scrambled. The scramble is a
 position-dependent transform: each triad's seven 32-bit words are byte-swapped,
 rotated by an amount keyed on the triad's index in the array, swapped in
-adjacent pairs, and bit-inverted. It carries no key -- the index is the only
-parameter -- so it is obfuscation, not encryption, and it is exactly invertible.
-
-The transform was reconstructed by Koppe et al., *Reverse Engineering x86
-Processor Microcode* (USENIX Security 2017), and implemented in
-`RUB-SysSec/Microcode`: the rotate-and-swap in ``ucodeapi/ucode.py``
-(``parsetriad_crypt`` / ``get_crypt``), the bit inversion in its disassembler
-(``get_triad(negate=True)`` for the ops, ``SequenceWord``'s ``~bits``) and
-assembler (``SW.bits()``'s ``r = ~r``). This is a port of that algorithm, and it
-yields the *logical* micro-ops and sequence word, the values the RUB-SysSec field
-tables (operations, registers, sequence-word actions) are defined on.
-
-The inversion is verified on the corpus (all 43 pre-Zen patches, 1168 triads).
-With it, 44.3% of the micro-ops decode to a known RUB operation and 89.3% of the
-sequence words to a known action, and 76.6% of the sequence words are bit-exact
-matches of the encodings RUB's assembler emits (``0xFFFC2000`` for ``next``,
-``0xFFFCA000 | addr`` for ``branch``) -- encodings that ran on real K8 hardware.
-Without it the same figures are 3.7%, 2.8% and 0%. Independently of any
-table, 94 decoded branch targets land 0-8 triads after a ROM address the
-patch's (plaintext) match registers hook, where a handler returns; without the
-inversion, none do.
-
-A triad is 28 bytes: seven 32-bit words that regroup into three 64-bit micro-ops
-and a 32-bit sequence word. The Zen families (0x17+) store their quads in the
-clear, so none of this applies to them.
+adjacent pairs, and bit-inverted.
 """
 
 from __future__ import annotations

@@ -486,7 +486,7 @@ def test_a_partial_triad_is_not_whole():
 
 def _obfuscated_triad_body(groups: list[tuple[list[int], int]]) -> bytes:
     """Eight match registers, then the given (ops, sequence_word) triads scrambled."""
-    from amd_ucode_patch.structures.triad_obfuscation import obfuscate_triad
+    from amd_ucode_patch.utils.triad_obfuscation import obfuscate_triad
     body = struct.pack("<8I", *range(8))
     for index, (ops, sw) in enumerate(groups):
         body += obfuscate_triad(ops, sw, index)
@@ -503,7 +503,7 @@ def test_pre_zen_op_groups_decode_the_scrambled_triads():
 
 def test_pre_zen_op_groups_reobfuscate_to_the_raw_triads():
     """The decoded view does not disturb the byte-exact round-trip."""
-    from amd_ucode_patch.structures.triad_obfuscation import obfuscate_triad
+    from amd_ucode_patch.utils.triad_obfuscation import obfuscate_triad
     triads = [([0x1, 0x2, 0x3], 0xAA), ([0x4, 0x5, 0x6], 0xBB), ([0x7, 0x8, 0x9], 0xCC)]
     body = Body.from_bytes(_obfuscated_triad_body(triads), _MATCH_FAMILY)
     body_data = body.body_data

@@ -17,7 +17,7 @@ from amd_ucode_patch.structures.body_data import BodyData
 from amd_ucode_patch.structures.match_registers import MatchRegisters
 from amd_ucode_patch.structures.op_group import OpGroup
 from amd_ucode_patch.structures.op_group_geometry import OpGroupGeometry
-from amd_ucode_patch.structures.triad_obfuscation import deobfuscate_triad
+from amd_ucode_patch.utils.triad_obfuscation import deobfuscate_triad
 
 
 @dataclass
@@ -85,7 +85,7 @@ class BodyDataFam0fto12(BodyData):
 
         AMD ships these triads scrambled, so the raw :attr:`op_triads` are not
         directly readable; each is descrambled by its position in the array and
-        bit-inverted (see :mod:`amd_ucode_patch.structures.triad_obfuscation`),
+        bit-inverted (see :mod:`amd_ucode_patch.utils.triad_obfuscation`),
         giving the logical values the RUB-SysSec field tables decode. :attr:`op_triads`
         keeps the raw bytes, so the patch still round-trips byte for byte;
         re-scrambling these groups with ``obfuscate_triad`` reproduces them.
