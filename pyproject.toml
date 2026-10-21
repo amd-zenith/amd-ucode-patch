@@ -31,7 +31,7 @@ classifiers = [
 ]
 dependencies = [
   "amd-cpuid==1.1.0",
-  "pycryptodome==3.24.1",
+  "pycryptodome==4.0.1",
   "rich==15.0.0",
 ]
 
